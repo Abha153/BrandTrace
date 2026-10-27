@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 115" fill="none">
+  <defs>
+    <style>
+      .bt-stroke {
+        stroke: #15221b;
+        stroke-width: 9;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      @media (prefers-color-scheme: dark) {
+        .bt-stroke {
+          stroke: #ffffff;
+        }
+      }
+    </style>
+  </defs>
+  <!-- Outer cube outline with checkmark trace on top-left -->
+  <path
+    class="bt-stroke"
+    d="M 50 8
+       L 92 32
+       L 92 82
+       L 50 106
+       L 8 82
+       L 8 46"
+  />
+  <!-- Top apex towards left edge -->
+  <path
+    class="bt-stroke"
+    d="M 50 8
+       L 26 22"
+  />
+  <!-- Checkmark tick on top-left -->
+  <path
+    class="bt-stroke"
+    d="M 14 38
+       L 24 44"
+  />
+  <!-- Isometric Center Seam Y: vertical down & up-right, with trace to center -->
+  <path
+    class="bt-stroke"
+    d="M 50 57
+       L 50 106"
+  />
+  <path
+    class="bt-stroke"
+    d="M 50 57
+       L 92 32"
+  />
+  <path
+    class="bt-stroke"
+    d="M 32 46
+       L 50 57"
+  />
+</svg>

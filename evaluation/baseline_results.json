@@ -1,0 +1,545 @@
+{
+  "total_samples": 50,
+  "tp": 16,
+  "fp": 2,
+  "fn": 12,
+  "tn": 20,
+  "precision": 0.8888888888888888,
+  "recall": 0.5714285714285714,
+  "f1": 0.6956521739130435,
+  "accuracy": 0.72,
+  "details": [
+    {
+      "id": "draft-01",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-02",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-03",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-04",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-05",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-06",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-07",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-08",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-09",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-10",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-11",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-12",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-13",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-14",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-15",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-16",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "FN"
+    },
+    {
+      "id": "draft-17",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "FN"
+    },
+    {
+      "id": "draft-18",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "FN"
+    },
+    {
+      "id": "draft-19",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-20",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-21",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$39/month",
+          "kind": "price"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-22",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$29/month",
+          "kind": "price"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-23",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$59/month",
+          "kind": "price"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-24",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$19/month",
+          "kind": "price"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-25",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "FN"
+    },
+    {
+      "id": "draft-26",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "FN"
+    },
+    {
+      "id": "draft-27",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "FN"
+    },
+    {
+      "id": "draft-28",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "FN"
+    },
+    {
+      "id": "draft-29",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$35/month",
+          "kind": "price"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-30",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "FN"
+    },
+    {
+      "id": "draft-31",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-32",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-33",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-34",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-35",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-36",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-37",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-38",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-39",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-40",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-41",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 2,
+      "findings": [
+        {
+          "category": "Tone",
+          "severity": "warning",
+          "quote": "revolutionary",
+          "kind": "tone"
+        },
+        {
+          "category": "Tone",
+          "severity": "warning",
+          "quote": "best-in-class",
+          "kind": "tone"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-42",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Approved Claims",
+          "severity": "error",
+          "quote": "human review",
+          "kind": "claims"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-43",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Approved Claims",
+          "severity": "error",
+          "quote": "human review",
+          "kind": "claims"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-44",
+      "category": "tricky",
+      "expected_violation": false,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$39/month",
+          "kind": "price"
+        }
+      ],
+      "classification": "FP"
+    },
+    {
+      "id": "draft-45",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "FN"
+    },
+    {
+      "id": "draft-46",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "FN"
+    },
+    {
+      "id": "draft-47",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "FN"
+    },
+    {
+      "id": "draft-48",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "FN"
+    },
+    {
+      "id": "draft-49",
+      "category": "tricky",
+      "expected_violation": false,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$299/month",
+          "kind": "price"
+        }
+      ],
+      "classification": "FP"
+    },
+    {
+      "id": "draft-50",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term"
+        }
+      ],
+      "classification": "TP"
+    }
+  ]
+}

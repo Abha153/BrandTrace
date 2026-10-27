@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@layer base {
+  :root,
+  [data-theme="light"] {
+    --bg-page: #f9f8f5; /* Warm off-white */
+    --bg-surface: #ffffff; /* Crisp card */
+    --bg-surface-elevated: #f3f1eb; /* Soft warm neutral */
+    --bg-surface-subtle: #fcfbf9;
+    --bg-input: #ffffff;
+    --border-main: #e7e4dc; /* Warm subtle border */
+    --border-subtle: #dcd8ce;
+    --text-primary: #15221b; /* Deep forest navy */
+    --text-secondary: #3e4c43; /* Forest gray */
+    --text-muted: #6b7a70; /* Soft sage gray */
+    --text-dim: #9aa79f;
+    --brand-primary: #2d5a43; /* Forest green */
+    --brand-primary-hover: #224734;
+    --brand-accent: #c85a32; /* Terracotta highlight */
+    --accent-emerald: #15803d;
+    --accent-amber: #b45309;
+    --accent-rose: #be123c;
+    --badge-bg: #f3f1eb;
+    --sidebar-bg: #ffffff;
+    --sidebar-border: #e7e4dc;
+  }
+
+  [data-theme="original"] {
+    --bg-page: #020617; /* Blue-black slate-950 */
+    --bg-surface: #0f172a; /* slate-900 */
+    --bg-surface-elevated: #1e293b; /* slate-800 */
+    --bg-surface-subtle: #080d1a;
+    --bg-input: #020617;
+    --border-main: #1e293b; /* slate-800 */
+    --border-subtle: #334155; /* slate-700 */
+    --text-primary: #f8fafc; /* slate-50 */
+    --text-secondary: #cbd5e1; /* slate-300 */
+    --text-muted: #94a3b8; /* slate-400 */
+    --text-dim: #64748b; /* slate-500 */
+    --brand-primary: #6366f1; /* Indigo */
+    --brand-primary-hover: #4f46e5;
+    --brand-accent: #06b6d4; /* Cyan */
+    --accent-emerald: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+    --badge-bg: #1e293b;
+    --sidebar-bg: #090f1f;
+    --sidebar-border: #1e293b;
+  }
+
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-subtle);
+    border-radius: 9999px;
+  }
+}

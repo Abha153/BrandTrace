@@ -1,0 +1,739 @@
+{
+  "total_samples": 50,
+  "tp": 28,
+  "fp": 0,
+  "fn": 0,
+  "tn": 22,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1": 1.0,
+  "accuracy": 1.0,
+  "details": [
+    {
+      "id": "draft-01",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-02",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-03",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-04",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-05",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-06",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-07",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-08",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-09",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-10",
+      "category": "clean",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-11",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term",
+          "suggestion": "BrandTrace Workspace",
+          "rule": {
+            "term": "BrandTrace Suite",
+            "replacement": "BrandTrace Workspace",
+            "source_id": 2
+          }
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-12",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term",
+          "suggestion": "BrandTrace Workspace",
+          "rule": {
+            "term": "BrandTrace Suite",
+            "replacement": "BrandTrace Workspace",
+            "source_id": 2
+          }
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-13",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term",
+          "suggestion": "BrandTrace Workspace",
+          "rule": {
+            "term": "BrandTrace Suite",
+            "replacement": "BrandTrace Workspace",
+            "source_id": 2
+          }
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-14",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term",
+          "suggestion": "BrandTrace Workspace",
+          "rule": {
+            "term": "BrandTrace Suite",
+            "replacement": "BrandTrace Workspace",
+            "source_id": 2
+          }
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-15",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term",
+          "suggestion": "BrandTrace Workspace",
+          "rule": {
+            "term": "BrandTrace Suite",
+            "replacement": "BrandTrace Workspace",
+            "source_id": 2
+          }
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-16",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "brandtrace suite",
+          "kind": "prohibited_term",
+          "suggestion": "BrandTrace Workspace",
+          "rule": {
+            "term": "BrandTrace Suite",
+            "replacement": "BrandTrace Workspace",
+            "source_id": 2
+          }
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-17",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace-Suite",
+          "kind": "prohibited_term",
+          "suggestion": "BrandTrace Workspace",
+          "rule": {
+            "term": "BrandTrace Suite",
+            "replacement": "BrandTrace Workspace",
+            "source_id": 2
+          }
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-18",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term",
+          "suggestion": "BrandTrace Workspace",
+          "rule": {
+            "term": "BrandTrace Suite",
+            "replacement": "BrandTrace Workspace",
+            "source_id": 2
+          }
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-19",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term",
+          "suggestion": "BrandTrace Workspace",
+          "rule": {
+            "term": "BrandTrace Suite",
+            "replacement": "BrandTrace Workspace",
+            "source_id": 2
+          }
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-20",
+      "category": "prohibited_term",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term",
+          "suggestion": "BrandTrace Workspace",
+          "rule": {
+            "term": "BrandTrace Suite",
+            "replacement": "BrandTrace Workspace",
+            "source_id": 2
+          }
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-21",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$39/month",
+          "kind": "price",
+          "explanation": "Standard tier is approved at $49/month, but draft states $39/month.",
+          "suggestion": "$49/month"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-22",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$29/month",
+          "kind": "price",
+          "explanation": "Standard tier is approved at $49/month, but draft states $29/month.",
+          "suggestion": "$49/month"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-23",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$59/month",
+          "kind": "price",
+          "explanation": "Standard tier is approved at $49/month, but draft states $59/month.",
+          "suggestion": "$49/month"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-24",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$19/month",
+          "kind": "price",
+          "explanation": "Standard tier is approved at $49/month, but draft states $19/month.",
+          "suggestion": "$49/month"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-25",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$39 a month",
+          "kind": "price",
+          "explanation": "Standard tier is approved at $49/month, but draft states $39 a month.",
+          "suggestion": "$49/month"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-26",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "39 USD per month",
+          "kind": "price",
+          "explanation": "Standard tier is approved at $49/month, but draft states 39 USD per month.",
+          "suggestion": "$49/month"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-27",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "Rs 2,500 per month",
+          "kind": "price_inr",
+          "explanation": "Approved Standard tier INR pricing is \u20b93,200 (Rs 3,200), but draft states Rs 2,500 per month.",
+          "suggestion": "\u20b93,200/month"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-28",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "\u20b92,800/month",
+          "kind": "price_inr",
+          "explanation": "Approved Standard tier INR pricing is \u20b93,200 (Rs 3,200), but draft states \u20b92,800/month.",
+          "suggestion": "\u20b93,200/month"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-29",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$35/month",
+          "kind": "price",
+          "explanation": "Standard tier is approved at $49/month, but draft states $35/month.",
+          "suggestion": "$49/month"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-30",
+      "category": "incorrect_price",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$ 39 / mo",
+          "kind": "price",
+          "explanation": "Standard tier is approved at $49/month, but draft states $ 39 / mo.",
+          "suggestion": "$49/month"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-31",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-32",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-33",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-34",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-35",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-36",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-37",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-38",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-39",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-40",
+      "category": "valid_price",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-41",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 2,
+      "findings": [
+        {
+          "category": "Tone",
+          "severity": "warning",
+          "quote": "revolutionary",
+          "kind": "tone",
+          "explanation": "Brand Voice Guide asks writers to avoid hype words like \"revolutionary\"."
+        },
+        {
+          "category": "Tone",
+          "severity": "warning",
+          "quote": "best-in-class",
+          "kind": "tone",
+          "explanation": "Brand Voice Guide asks writers to avoid hype words like \"best-in-class\"."
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-42",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 2,
+      "findings": [
+        {
+          "category": "Tone",
+          "severity": "warning",
+          "quote": "game-changing",
+          "kind": "tone",
+          "explanation": "Brand Voice Guide asks writers to avoid hype words like \"game-changing\"."
+        },
+        {
+          "category": "Approved Claims",
+          "severity": "error",
+          "quote": "no human review",
+          "kind": "claims",
+          "explanation": "Wording suggests publishing without a human decision. Approved claims specify a human reviewer makes the final publishing decision."
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-43",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Approved Claims",
+          "severity": "error",
+          "quote": "automatically publishes",
+          "kind": "claims",
+          "explanation": "Wording suggests publishing without a human decision. Approved claims specify a human reviewer makes the final publishing decision."
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-44",
+      "category": "tricky",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-45",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 2,
+      "findings": [
+        {
+          "category": "Approved Claims",
+          "severity": "error",
+          "quote": "automatically approves",
+          "kind": "claims",
+          "explanation": "Wording suggests publishing without a human decision. Approved claims specify a human reviewer makes the final publishing decision."
+        },
+        {
+          "category": "Approved Claims",
+          "severity": "error",
+          "quote": "replaces your compliance team",
+          "kind": "claims",
+          "explanation": "Wording suggests publishing without a human decision. Approved claims specify a human reviewer makes the final publishing decision."
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-46",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "warning",
+          "quote": "BrandTrace Suit",
+          "kind": "prohibited_term_fuzzy",
+          "explanation": "Possible typo for prohibited term \"BrandTrace Suite\".",
+          "suggestion": "BrandTrace Workspace"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-47",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Pricing",
+          "severity": "error",
+          "quote": "$39 a month",
+          "kind": "price",
+          "explanation": "Standard tier is approved at $49/month, but draft states $39 a month.",
+          "suggestion": "$49/month"
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-48",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 3,
+      "findings": [
+        {
+          "category": "Tone",
+          "severity": "warning",
+          "quote": "cutting-edge",
+          "kind": "tone",
+          "explanation": "Brand Voice Guide asks writers to avoid hype words like \"cutting-edge\"."
+        },
+        {
+          "category": "Tone",
+          "severity": "warning",
+          "quote": "world-class",
+          "kind": "tone",
+          "explanation": "Brand Voice Guide asks writers to avoid hype words like \"world-class\"."
+        },
+        {
+          "category": "Approved Claims",
+          "severity": "error",
+          "quote": "without any human review",
+          "kind": "claims",
+          "explanation": "Wording suggests publishing without a human decision. Approved claims specify a human reviewer makes the final publishing decision."
+        }
+      ],
+      "classification": "TP"
+    },
+    {
+      "id": "draft-49",
+      "category": "tricky",
+      "expected_violation": false,
+      "detected_violations_count": 0,
+      "findings": [],
+      "classification": "TN"
+    },
+    {
+      "id": "draft-50",
+      "category": "tricky",
+      "expected_violation": true,
+      "detected_violations_count": 1,
+      "findings": [
+        {
+          "category": "Terminology",
+          "severity": "error",
+          "quote": "BrandTrace Suite",
+          "kind": "prohibited_term",
+          "suggestion": "BrandTrace Workspace",
+          "rule": {
+            "term": "BrandTrace Suite",
+            "replacement": "BrandTrace Workspace",
+            "source_id": 2
+          }
+        }
+      ],
+      "classification": "TP"
+    }
+  ]
+}

@@ -1,0 +1,380 @@
+[
+  {
+    "id": "draft-01",
+    "category": "clean",
+    "text": "BrandTrace Workspace helps marketing teams maintain consistent brand guidelines across all published materials.",
+    "expected_violation": false,
+    "description": "Clean standard brand mention with compliant terminology"
+  },
+  {
+    "id": "draft-02",
+    "category": "clean",
+    "text": "Every content update undergoes verification before it goes live to customers.",
+    "expected_violation": false,
+    "description": "Clean operational copy with no prohibited terms"
+  },
+  {
+    "id": "draft-03",
+    "category": "clean",
+    "text": "BrandTrace Workspace checks content against approved company information before publication. A human reviewer makes the final decision.",
+    "expected_violation": false,
+    "description": "Clean text using exact approved claim"
+  },
+  {
+    "id": "draft-04",
+    "category": "clean",
+    "text": "Our team relies on clear, friendly and confident communication in every customer email.",
+    "expected_violation": false,
+    "description": "Clean voice-aligned content"
+  },
+  {
+    "id": "draft-05",
+    "category": "clean",
+    "text": "Teams can collaborate on document reviews and manage approval workflows effectively.",
+    "expected_violation": false,
+    "description": "Clean collaboration description"
+  },
+  {
+    "id": "draft-06",
+    "category": "clean",
+    "text": "We provide detailed compliance audits and source document attribution for legal and marketing teams.",
+    "expected_violation": false,
+    "description": "Clean product capability copy"
+  },
+  {
+    "id": "draft-07",
+    "category": "clean",
+    "text": "Marketing leaders appreciate the visibility into real-time brand sentiment and competitor mentions.",
+    "expected_violation": false,
+    "description": "Clean feature summary"
+  },
+  {
+    "id": "draft-08",
+    "category": "clean",
+    "text": "BrandTrace Workspace integrates seamlessly with modern document management systems.",
+    "expected_violation": false,
+    "description": "Clean integration statement"
+  },
+  {
+    "id": "draft-09",
+    "category": "clean",
+    "text": "Reviewers can inspect findings and accept suggested replacements with a single click.",
+    "expected_violation": false,
+    "description": "Clean workflow description"
+  },
+  {
+    "id": "draft-10",
+    "category": "clean",
+    "text": "We ensure transparency by citing exact reference documents for every policy check.",
+    "expected_violation": false,
+    "description": "Clean policy statement"
+  },
+  {
+    "id": "draft-11",
+    "category": "prohibited_term",
+    "text": "Upgrade your team to BrandTrace Suite today for advanced content verification.",
+    "expected_violation": true,
+    "expected_kind": "prohibited_term",
+    "description": "Exact prohibited product name BrandTrace Suite"
+  },
+  {
+    "id": "draft-12",
+    "category": "prohibited_term",
+    "text": "With BrandTrace Suite, marketing compliance becomes effortless and centralized.",
+    "expected_violation": true,
+    "expected_kind": "prohibited_term",
+    "description": "Prohibited term in introductory sentence"
+  },
+  {
+    "id": "draft-13",
+    "category": "prohibited_term",
+    "text": "Thousands of companies trust BrandTrace Suite for automated brand governance.",
+    "expected_violation": true,
+    "expected_kind": "prohibited_term",
+    "description": "Prohibited term in social proof copy"
+  },
+  {
+    "id": "draft-14",
+    "category": "prohibited_term",
+    "text": "Switch from legacy tools to BrandTrace Suite and save hours of manual review.",
+    "expected_violation": true,
+    "expected_kind": "prohibited_term",
+    "description": "Prohibited term in call-to-action"
+  },
+  {
+    "id": "draft-15",
+    "category": "prohibited_term",
+    "text": "The new release of BrandTrace Suite includes team collaboration and audit trails.",
+    "expected_violation": true,
+    "expected_kind": "prohibited_term",
+    "description": "Prohibited term in product update announcement"
+  },
+  {
+    "id": "draft-16",
+    "category": "prohibited_term",
+    "text": "Enterprise customers can deploy brandtrace suite across all global regional offices.",
+    "expected_violation": true,
+    "expected_kind": "prohibited_term",
+    "description": "Lowercase prohibited term: brandtrace suite"
+  },
+  {
+    "id": "draft-17",
+    "category": "prohibited_term",
+    "text": "Our internal guidelines strictly mandate BrandTrace-Suite deployment for all agencies.",
+    "expected_violation": true,
+    "expected_kind": "prohibited_term",
+    "description": "Hyphenated prohibited term: BrandTrace-Suite"
+  },
+  {
+    "id": "draft-18",
+    "category": "prohibited_term",
+    "text": "Experience the power of the BrandTrace  Suite platform with our 14-day trial.",
+    "expected_violation": true,
+    "expected_kind": "prohibited_term",
+    "description": "Prohibited term with double whitespace: BrandTrace  Suite"
+  },
+  {
+    "id": "draft-19",
+    "category": "prohibited_term",
+    "text": "Is BrandTrace Suite right for your organization? Read our buyer comparison guide.",
+    "expected_violation": true,
+    "expected_kind": "prohibited_term",
+    "description": "Prohibited term in question heading"
+  },
+  {
+    "id": "draft-20",
+    "category": "prohibited_term",
+    "text": "Welcome to the BrandTrace Suite administrative portal and user dashboard.",
+    "expected_violation": true,
+    "expected_kind": "prohibited_term",
+    "description": "Prohibited term in portal header"
+  },
+  {
+    "id": "draft-21",
+    "category": "incorrect_price",
+    "text": "Get started with the BrandTrace standard tier for just $39/month.",
+    "expected_violation": true,
+    "expected_kind": "pricing",
+    "description": "Incorrect standard price $39/month (approved is $49/month)"
+  },
+  {
+    "id": "draft-22",
+    "category": "incorrect_price",
+    "text": "BrandTrace Workspace standard plan is available at $29/month on an annual commitment.",
+    "expected_violation": true,
+    "expected_kind": "pricing",
+    "description": "Incorrect standard price $29/month"
+  },
+  {
+    "id": "draft-23",
+    "category": "incorrect_price",
+    "text": "Our standard plan starts at $59/month for small teams.",
+    "expected_violation": true,
+    "expected_kind": "pricing",
+    "description": "Incorrect standard price $59/month"
+  },
+  {
+    "id": "draft-24",
+    "category": "incorrect_price",
+    "text": "Subscribe to the standard tier today at $19/month for the first quarter.",
+    "expected_violation": true,
+    "expected_kind": "pricing",
+    "description": "Incorrect standard price $19/month"
+  },
+  {
+    "id": "draft-25",
+    "category": "incorrect_price",
+    "text": "The standard subscription costs $39 a month per user.",
+    "expected_violation": true,
+    "expected_kind": "pricing",
+    "description": "Incorrect price formatting '$39 a month' instead of '$39/month'"
+  },
+  {
+    "id": "draft-26",
+    "category": "incorrect_price",
+    "text": "Our standard plan is priced at 39 USD per month.",
+    "expected_violation": true,
+    "expected_kind": "pricing",
+    "description": "Incorrect price formatting '39 USD per month'"
+  },
+  {
+    "id": "draft-27",
+    "category": "incorrect_price",
+    "text": "In India, our standard package is offered at Rs 2,500 per month.",
+    "expected_violation": true,
+    "expected_kind": "pricing",
+    "description": "Incorrect INR price 'Rs 2,500 per month' (approved is Rs 3,200 or ₹3,200)"
+  },
+  {
+    "id": "draft-28",
+    "category": "incorrect_price",
+    "text": "Sign up for standard access at ₹2,800/month.",
+    "expected_violation": true,
+    "expected_kind": "pricing",
+    "description": "Incorrect INR currency symbol '₹2,800/month'"
+  },
+  {
+    "id": "draft-29",
+    "category": "incorrect_price",
+    "text": "The Standard package offers full brand auditing for $35/month.",
+    "expected_violation": true,
+    "expected_kind": "pricing",
+    "description": "Capitalized Standard tier with incorrect $35/month"
+  },
+  {
+    "id": "draft-30",
+    "category": "incorrect_price",
+    "text": "Enjoy all standard features starting at $ 39 / mo.",
+    "expected_violation": true,
+    "expected_kind": "pricing",
+    "description": "Spaced slash and abbreviation '$ 39 / mo'"
+  },
+  {
+    "id": "draft-31",
+    "category": "valid_price",
+    "text": "BrandTrace Workspace standard tier is priced at $49/month.",
+    "expected_violation": false,
+    "description": "Exact approved standard tier price $49/month"
+  },
+  {
+    "id": "draft-32",
+    "category": "valid_price",
+    "text": "Sign up for our standard plan for $49/month with unlimited draft audits.",
+    "expected_violation": false,
+    "description": "Valid standard price in promotional sentence"
+  },
+  {
+    "id": "draft-33",
+    "category": "valid_price",
+    "text": "At $49/month, the BrandTrace Workspace standard tier provides comprehensive coverage.",
+    "expected_violation": false,
+    "description": "Valid price preceding tier keyword"
+  },
+  {
+    "id": "draft-34",
+    "category": "valid_price",
+    "text": "The Standard plan is $49 a month, billed annually.",
+    "expected_violation": false,
+    "description": "Valid price formatted as '$49 a month'"
+  },
+  {
+    "id": "draft-35",
+    "category": "valid_price",
+    "text": "Teams can subscribe to the standard tier for 49 USD per month.",
+    "expected_violation": false,
+    "description": "Valid price formatted as '49 USD per month'"
+  },
+  {
+    "id": "draft-36",
+    "category": "valid_price",
+    "text": "Our standard plan in India is Rs 3,200 per month.",
+    "expected_violation": false,
+    "description": "Valid approved INR price 'Rs 3,200 per month'"
+  },
+  {
+    "id": "draft-37",
+    "category": "valid_price",
+    "text": "Regional pricing for standard users is ₹3,200/month.",
+    "expected_violation": false,
+    "description": "Valid approved INR price '₹3,200/month'"
+  },
+  {
+    "id": "draft-38",
+    "category": "valid_price",
+    "text": "Pricing is simple: BrandTrace Workspace standard tier is $49/month with no hidden fees.",
+    "expected_violation": false,
+    "description": "Valid price in pricing FAQ"
+  },
+  {
+    "id": "draft-39",
+    "category": "valid_price",
+    "text": "With the standard tier at $49/month, compliance is accessible to every growing business.",
+    "expected_violation": false,
+    "description": "Valid price in value proposition"
+  },
+  {
+    "id": "draft-40",
+    "category": "valid_price",
+    "text": "For individual consultants, our standard tier remains at $49/month.",
+    "expected_violation": false,
+    "description": "Valid price in segment targeting"
+  },
+  {
+    "id": "draft-41",
+    "category": "tricky",
+    "text": "Our revolutionary AI platform delivers best-in-class brand management.",
+    "expected_violation": true,
+    "expected_kind": "tone",
+    "description": "Hype words 'revolutionary' and 'best-in-class' violating voice guide"
+  },
+  {
+    "id": "draft-42",
+    "category": "tricky",
+    "text": "Our game-changing system ensures no human review needed before publishing.",
+    "expected_violation": true,
+    "expected_kind": "claims_and_tone",
+    "description": "Contradicts human reviewer claim and contains hype word"
+  },
+  {
+    "id": "draft-43",
+    "category": "tricky",
+    "text": "The software automatically publishes all approved posts directly to social media.",
+    "expected_violation": true,
+    "expected_kind": "claims",
+    "description": "Contradicts human publishing decision rule"
+  },
+  {
+    "id": "draft-44",
+    "category": "tricky",
+    "text": "Third party add-on plugins cost $39/month, while our standard plan remains $49/month.",
+    "expected_violation": false,
+    "description": "Tricky false positive test: $39/month is for third-party add-ons, not standard tier"
+  },
+  {
+    "id": "draft-45",
+    "category": "tricky",
+    "text": "BrandTrace Workspace replaces your compliance team and automatically approves every draft.",
+    "expected_violation": true,
+    "expected_kind": "claims",
+    "description": "Disallowed claim: replaces compliance team and automatically approves"
+  },
+  {
+    "id": "draft-46",
+    "category": "tricky",
+    "text": "Upgrade to BrandTrace Suit for faster audits.",
+    "expected_violation": true,
+    "expected_kind": "prohibited_term_typo",
+    "description": "Typo of prohibited term: 'BrandTrace Suit' (missing 'e')"
+  },
+  {
+    "id": "draft-47",
+    "category": "tricky",
+    "text": "BrandTrace Workspace Standard tier pricing: $39 a month on special promotional discount.",
+    "expected_violation": true,
+    "expected_kind": "pricing",
+    "description": "Alternative format '$39 a month' far from standard keyword"
+  },
+  {
+    "id": "draft-48",
+    "category": "tricky",
+    "text": "We provide cutting-edge, world-class governance without any human review required.",
+    "expected_violation": true,
+    "expected_kind": "claims_and_tone",
+    "description": "Multiple hype terms and unapproved autonomous claim"
+  },
+  {
+    "id": "draft-49",
+    "category": "tricky",
+    "text": "The enterprise custom plan costs $299/month, whereas standard is $49/month.",
+    "expected_violation": false,
+    "description": "Multiple prices present: $299/month for enterprise, valid $49/month for standard"
+  },
+  {
+    "id": "draft-50",
+    "category": "tricky",
+    "text": "Unlike BrandTrace Suite which is retired, BrandTrace Workspace is our flagship product.",
+    "expected_violation": true,
+    "expected_kind": "prohibited_term",
+    "description": "Mentioning prohibited name even in historical comparison context"
+  }
+]

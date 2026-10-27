@@ -1,0 +1,31 @@
+# Render Blueprint for BrandTrace
+# Free tier web service running full-stack React + Express + SQLite
+# Note: On Render free tier, the filesystem is ephemeral, so the SQLite database is reset
+# whenever the container restarts or spins down after inactivity.
+services:
+  - type: web
+    name: brandtrace-app
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BRANDTRACE_DB
+        value: /tmp/brandtrace.db
+      - key: STORAGE_MODE
+        value: ephemeral
+      - key: LLM_PROVIDER
+        value: none
+      - key: LLM_MODEL
+        value: gemini-3.8-flash
+      - key: LLM_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta/openai/
+      # Optional: set GEMINI_API_KEY in Render dashboard environment secrets
+      - key: GEMINI_API_KEY
+        sync: false
+      # Exact frontend origins allowed if hosted separately (comma-separated, no wildcards)
+      - key: CORS_ORIGINS
+        value: ""

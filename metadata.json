@@ -1,0 +1,6 @@
+{
+  "name": "BrandTrace AI - Brand & Review AI Intelligence",
+  "description": "Multi-provider AI brand analysis, review auditing, and LLM configuration hub supporting Anthropic, OpenAI, and Gemini with hourly rate caps and storage controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

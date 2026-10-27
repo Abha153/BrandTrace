@@ -1,0 +1,25 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+backend/*.db
+
+# Local databases and runtime data
+*.db
+*.db-wal
+*.db-shm
+brandtrace-data.json
+
+bun.lock
+bun.lockb
+
+# Local release archive and test-only image
+/public/assets/aistudio/brandtrace-github-release_4f8ca279.zip
+/public/crop_test.png
+
+# Exclude bundled source archive and test-only image
+/public/assets/aistudio/brandtrace-github-release_4f8ca279.zip
+/public/crop_test.png
