@@ -18,14 +18,11 @@ services:
       - key: STORAGE_MODE
         value: ephemeral
       - key: LLM_PROVIDER
-        value: none
+        value:  openai_compatible
       - key: LLM_MODEL
         value: gemini-3.8-flash
       - key: LLM_BASE_URL
         value: https://generativelanguage.googleapis.com/v1beta/openai/
-      # Optional: set GEMINI_API_KEY in Render dashboard environment secrets
-      - key: GEMINI_API_KEY
-        sync: false
       # Exact frontend origins allowed if hosted separately (comma-separated, no wildcards)
       - key: CORS_ORIGINS
         value: ""
