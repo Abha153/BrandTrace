@@ -441,7 +441,7 @@ CORS_ORIGINS=`;
                 {config?.has_api_key && (
                   <span className="text-[11px] text-emerald-500 font-medium flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" />
-                    Key configured on server ({config.masked_api_key})
+                    Key configured on server
                   </span>
                 )}
               </div>
@@ -452,7 +452,7 @@ CORS_ORIGINS=`;
                   onChange={(e) => setApiKey(e.target.value)}
                   placeholder={
                     config?.has_api_key
-                      ? `Saved (${config.masked_api_key}). Leave empty to keep or paste new key.`
+                      ? `Saved. Leave empty to keep or paste new key.`
                       : 'Enter API key...'
                   }
                   className={`w-full rounded-xl px-4 py-2.5 text-sm font-mono transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 border ${

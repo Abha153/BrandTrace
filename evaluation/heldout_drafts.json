@@ -1,0 +1,228 @@
+{
+ "note": "Held-out set written AFTER the rules were finalised and never used to tune them. 30 synthetic drafts, one annotator. Span-level labels against the demo workspace rules.",
+ "drafts": [
+  {
+   "id": "c01",
+   "kind": "clean",
+   "text": "BrandTrace Workspace checks content against approved company information before publication.",
+   "expected": []
+  },
+  {
+   "id": "c02",
+   "kind": "clean",
+   "text": "The standard tier is $49/month.",
+   "expected": []
+  },
+  {
+   "id": "c03",
+   "kind": "clean",
+   "text": "Our Enterprise plan is $199/month and includes SSO.",
+   "expected": []
+  },
+  {
+   "id": "c04",
+   "kind": "clean",
+   "text": "Standard pricing in India is ₹3,200/month.",
+   "expected": []
+  },
+  {
+   "id": "c05",
+   "kind": "clean",
+   "text": "A human reviewer makes the final publishing decision on every draft.",
+   "expected": []
+  },
+  {
+   "id": "c06",
+   "kind": "clean",
+   "text": "Join the webinar on March 5 to learn about the 2026 roadmap.",
+   "expected": []
+  },
+  {
+   "id": "c07",
+   "kind": "clean",
+   "text": "The Slack plugin from a marketplace vendor costs $12/month.",
+   "expected": []
+  },
+  {
+   "id": "c08",
+   "kind": "clean",
+   "text": "The team shipped the update on Tuesday and fixed three bugs.",
+   "expected": []
+  },
+  {
+   "id": "c09",
+   "kind": "clean",
+   "text": "Reach us at support@example.com for any questions.",
+   "expected": []
+  },
+  {
+   "id": "c10",
+   "kind": "clean",
+   "text": "BrandTrace Workspace Standard is our most popular tier.",
+   "expected": []
+  },
+  {
+   "id": "v01",
+   "kind": "term",
+   "text": "Introducing BrandTrace Suite for modern teams.",
+   "expected": [
+    "BrandTrace Suite"
+   ]
+  },
+  {
+   "id": "v02",
+   "kind": "term",
+   "text": "brandtrace suite is now available.",
+   "expected": [
+    "brandtrace suite"
+   ]
+  },
+  {
+   "id": "v03",
+   "kind": "price",
+   "text": "The standard tier is only $39/month this quarter.",
+   "expected": [
+    "$39/month"
+   ]
+  },
+  {
+   "id": "v04",
+   "kind": "price",
+   "text": "Standard plan: $59 per month.",
+   "expected": [
+    "$59 per month"
+   ]
+  },
+  {
+   "id": "v05",
+   "kind": "price",
+   "text": "The Standard tier costs ₹2,500/month in India.",
+   "expected": [
+    "₹2,500/month"
+   ]
+  },
+  {
+   "id": "v06",
+   "kind": "price",
+   "text": "Our standard subscription costs USD 45 a month.",
+   "expected": [
+    "USD 45 a month"
+   ]
+  },
+  {
+   "id": "v07",
+   "kind": "hype",
+   "text": "A revolutionary way to manage brand content.",
+   "expected": [
+    "revolutionary"
+   ]
+  },
+  {
+   "id": "v08",
+   "kind": "hype",
+   "text": "The best-in-class review assistant.",
+   "expected": [
+    "best-in-class"
+   ]
+  },
+  {
+   "id": "v09",
+   "kind": "hype",
+   "text": "This tool is a gamechanger for marketers.",
+   "expected": [
+    "gamechanger"
+   ]
+  },
+  {
+   "id": "v10",
+   "kind": "claim",
+   "text": "Content is published with no human review at all.",
+   "expected": [
+    "no human review"
+   ]
+  },
+  {
+   "id": "v11",
+   "kind": "multi",
+   "text": "Meet BrandTrace Suite, a revolutionary product.",
+   "expected": [
+    "BrandTrace Suite",
+    "revolutionary"
+   ]
+  },
+  {
+   "id": "v12",
+   "kind": "multi",
+   "text": "Our standard tier is $39/month, a revolutionary price.",
+   "expected": [
+    "$39/month",
+    "revolutionary"
+   ]
+  },
+  {
+   "id": "v13",
+   "kind": "typo",
+   "text": "BrandTrace Suit helps teams.",
+   "expected": [
+    "BrandTrace Suit"
+   ]
+  },
+  {
+   "id": "v14",
+   "kind": "dash",
+   "text": "BrandTrace–Suite is on sale.",
+   "expected": [
+    "BrandTrace–Suite"
+   ]
+  },
+  {
+   "id": "v15",
+   "kind": "price",
+   "text": "Standard tier: ₹3,000 per month.",
+   "expected": [
+    "₹3,000 per month"
+   ]
+  },
+  {
+   "id": "v16",
+   "kind": "claim",
+   "text": "Everything is approved automatically with no human review.",
+   "expected": [
+    "no human review"
+   ]
+  },
+  {
+   "id": "v17",
+   "kind": "hype",
+   "text": "Hype alert: BEST-IN-CLASS results guaranteed.",
+   "expected": [
+    "BEST-IN-CLASS"
+   ]
+  },
+  {
+   "id": "v18",
+   "kind": "multi",
+   "text": "Try the BrandTrace Suite trial; standard tier $29/month.",
+   "expected": [
+    "BrandTrace Suite",
+    "$29/month"
+   ]
+  },
+  {
+   "id": "v19",
+   "kind": "price",
+   "text": "The standard plan is priced at 39 USD per month.",
+   "expected": [
+    "39 USD per month"
+   ]
+  },
+  {
+   "id": "v20",
+   "kind": "hype_variant",
+   "text": "Our game-changing workspace helps teams ship faster.",
+   "expected": [
+    "game-changing"
+   ]
+  }
+ ]
+}

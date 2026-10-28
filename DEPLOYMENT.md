@@ -60,3 +60,15 @@ Render provides free Node.js web services with automatic TLS and Git deployment.
 - **Demo Isolation**: Client-controlled workspace IDs (`x-workspace-id`) provide demonstration separation so multiple users can test custom brand rules simultaneously without collision. It is not cryptographic multi-tenant access control.
 - **Data Protection**: Sensitive API keys and full drafts are never logged to public standard output or sent in error responses.
 - **Delete My Data**: Users can erase their workspace rules, sources, and review history at any time using the "Delete My Data" feature.
+
+
+## Security configuration (required for a public deployment)
+| Variable | Purpose |
+|---|---|
+| `ADMIN_TOKEN` | Long random string. Without it, runtime config changes are disabled in production. Send as `x-admin-token`. |
+| `ALLOWED_LLM_HOSTS` | Optional comma-separated extra hostnames API keys may be sent to (defaults: Google Generative Language, OpenAI, Anthropic). |
+| `LLM_MAX_CALLS_PER_HOUR` | Global hourly cap on AI calls (default 30; `0` means unlimited). |
+| `CORS_ORIGINS` | Exact origins allowed cross-origin; leave empty for same-origin only. |
+
+Set `LLM_API_KEY` (or `GEMINI_API_KEY`) as a secret in the host dashboard, never in the repo. The model in `render.yaml`
+may be replaced by its provider; confirm the current model id in the provider's documentation and use "Test connection".

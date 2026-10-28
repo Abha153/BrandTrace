@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """
+NOTE: this evaluates a PYTHON RE-IMPLEMENTATION of the rules, not src/server/checker.ts.
+Use `npm run eval:checker` to evaluate the real checker on a held-out set.
+
 Repeatable Synthetic Evaluation Runner for BrandTrace Rule Engine
 Compares baseline deterministic rules vs improved deterministic rules.
 """

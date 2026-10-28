@@ -23,3 +23,5 @@ bun.lockb
 # Exclude bundled source archive and test-only image
 /public/assets/aistudio/brandtrace-github-release_4f8ca279.zip
 /public/crop_test.png
+
+brandtrace-fixes.patch

@@ -328,7 +328,7 @@ function BrandTraceMain() {
         showToast('success', 'Sample reviews seeded into SQLite database!');
         loadReviews();
       } else {
-        showToast('error', 'Failed to seed sample reviews');
+        showToast('error', 'Bundled sample reviews were removed. Run an analysis to create your first review.');
       }
     } catch (err) {
       showToast('error', 'Error seeding database');
