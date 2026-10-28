@@ -23,6 +23,18 @@ services:
         value: gemini-3.8-flash
       - key: LLM_BASE_URL
         value: https://generativelanguage.googleapis.com/v1beta/openai/
+      # Set GEMINI_API_KEY in the Render dashboard (never in Git). Key: https://aistudio.google.com/apikey
+      - key: GEMINI_API_KEY
+        sync: false
+      # Caps AI calls per hour across all visitors (resets on restart) so judges cannot exhaust your free quota.
+      - key: LLM_MAX_CALLS_PER_HOUR
+        value: "30"
+      # Google's free tier allows about 20 requests/day per model, so cap per day as well (0 = unlimited).
+      - key: LLM_MAX_CALLS_PER_DAY
+        value: "15"
+      # Optional: lets you change AI settings via the x-admin-token header. Unset = settings are read-only.
+      - key: ADMIN_TOKEN
+        sync: false
       # Exact frontend origins allowed if hosted separately (comma-separated, no wildcards)
       - key: CORS_ORIGINS
         value: ""

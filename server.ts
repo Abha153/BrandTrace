@@ -7,6 +7,7 @@ import { GoogleGenAI } from '@google/genai';
 import { getDatabase, seedDemoWorkspace } from './src/server/db.ts';
 import { runDynamicRules } from './src/server/checker.ts';
 import { isAllowedBaseUrl, tokensMatch } from './src/server/security.ts';
+import { friendlyLlmError, DailyCounter } from './src/server/llmErrors.ts';
 import { initReviewStore, nextComplianceId, listReviews, getReview, saveReview, deleteReview, reviewStats, recordAudit, listAudit, purgeWorkspaceReviews, expiringSources } from './src/server/reviewStore.ts';
 import { createApiKey, verifyApiKey, revokeApiKey, keyRateAllowed } from './src/server/apiKeys.ts';
 
@@ -62,7 +63,7 @@ const runtimeConfig: RuntimeConfig = {
 let hourlyCallCount = 0;
 let hourWindowStart = Date.now();
 
-function checkRateLimit(): { allowed: boolean; remaining: number | null; resetIn: number } {
+function checkHourlyLimit(): { allowed: boolean; remaining: number | null; resetIn: number } {
   const now = Date.now();
   const ONE_HOUR = 60 * 60 * 1000;
 
@@ -85,8 +86,21 @@ function checkRateLimit(): { allowed: boolean; remaining: number | null; resetIn
   return { allowed: true, remaining: limit - hourlyCallCount, resetIn };
 }
 
+// Daily cap (LLM_MAX_CALLS_PER_DAY, 0 = unlimited). Google's free tier is a per-day quota, so an hourly cap alone
+// cannot protect it. In memory: resets on restart, and its 24h window is not aligned with Google's reset time.
+const DAILY = new DailyCounter();
+function checkRateLimit(): { allowed: boolean; remaining: number | null; resetIn: number } {
+  const hourly = checkHourlyLimit();
+  const daily = DAILY.check(Number(process.env.LLM_MAX_CALLS_PER_DAY || 0));
+  if (!hourly.allowed) return hourly;
+  if (!daily.allowed) return { allowed: false, remaining: 0, resetIn: daily.resetIn };
+  const rem = [hourly.remaining, daily.remaining].filter((x): x is number => x !== null);
+  return { allowed: true, remaining: rem.length ? Math.min(...rem) : null, resetIn: hourly.resetIn };
+}
+
 function incrementRateLimit() {
   hourlyCallCount++;
+  DAILY.increment();
 }
 
 // Storage management for reviews
@@ -1281,7 +1295,15 @@ ${f.source ? `- **Source**: ${f.source.name} (${f.source.section})` : ''}`).join
         message: 'Rule checks and keyword retrieval ran locally.',
       };
 
-      if (activeProvider !== 'none' && activeKey) {
+      // The hourly AI cap (LLM_MAX_CALLS_PER_HOUR) must also protect /api/review, the main Gemini path,
+      // otherwise a public demo can exhaust the owner's Gemini quota. Rule findings are still returned.
+      const reviewRate = activeProvider !== 'none' && activeKey ? checkRateLimit() : null;
+      if (reviewRate && !reviewRate.allowed) {
+        analysisInfo.llm_status = 'failed';
+        analysisInfo.error_kind = 'app_limit';
+        analysisInfo.message = `Analysis Unavailable: the AI call limit for this demo was reached (try again in ${Math.ceil(reviewRate.resetIn / 60)} min). Deterministic findings are shown without AI verification.`;
+      } else if (activeProvider !== 'none' && activeKey) {
+        incrementRateLimit();
         try {
           const systemPrompt = `You are the BrandTrace AI compliance reviewer.
 Inspect the draft against the APPROVED SOURCES list.
@@ -1339,7 +1361,8 @@ ${draft}
         } catch (err: any) {
           analysisInfo.llm_status = 'failed';
           analysisInfo.error_kind = 'provider_error';
-          analysisInfo.message = `Analysis Unavailable: ${err.message}. Deterministic findings are displayed without external AI verification.`;
+          console.error('AI analysis failed:', String(err?.message || err).slice(0, 200));
+          analysisInfo.message = `Analysis Unavailable: ${friendlyLlmError(err)} Deterministic findings are displayed without external AI verification.`;
         }
       }
 
@@ -1664,7 +1687,7 @@ ${draft}
       res.json({
         success: true,
         result: fallbackSimulated,
-        warning: `Upstream AI Provider notice: ${err.message || 'Transient error'}. Loaded BrandTrace Heuristic Intelligence report.`,
+        warning: `Upstream AI Provider notice: ${friendlyLlmError(err)} Loaded BrandTrace Heuristic Intelligence report.`,
       });
     }
   });
@@ -1687,7 +1710,7 @@ ${draft}
 
       const newReview = {
         id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        title: title || `${brandName || 'Brand'} Analysis - ${new Date().toLocaleDateString()}`,
+        title: title || `${brandName || 'Brand'} Analysis`, // no date here: the server clock is UTC; the UI shows createdAt in the viewer's timezone
         brandName: brandName || 'Untitled Brand',
         productOrService: productOrService || '',
         source: source || 'customer_review',
