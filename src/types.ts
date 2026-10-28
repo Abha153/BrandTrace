@@ -163,12 +163,12 @@ export interface BrandAnalysisResult {
     neutral: number;
     negative: number;
   };
-  brandVoiceScore: number;
+  brandVoiceScore: number | null;
   brandVoiceTone: string;
   brandVoiceTags: string[];
-  aiVisibilityScore: number;
-  aiCitationProbability: 'High' | 'Medium' | 'Low';
-  hallucinationRisk: 'Low' | 'Moderate' | 'High';
+  aiVisibilityScore: number | null;
+  aiCitationProbability: 'High' | 'Medium' | 'Low' | 'Not assessed';
+  hallucinationRisk: 'Low' | 'Moderate' | 'High' | 'Not assessed';
   executiveSummary: string;
   strengths: string[];
   vulnerabilities: string[];

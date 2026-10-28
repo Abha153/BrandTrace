@@ -1,0 +1,876 @@
+From 38f71454cda1d52de32f2204804423848f1e679c Mon Sep 17 00:00:00 2001
+From: Abha Tiwari <abha@example.com>
+Date: Tue, 27 Oct 2026 18:40:18 +0000
+Subject: [PATCH] Remove fabricated seed data and invented scores; lock down
+ config, CORS and API-key handling; add tests and held-out evaluation of the
+ real checker
+
+---
+ .env.example                     |   5 +
+ DEPLOYMENT.md                    |  12 ++
+ README.md                        |  30 +++-
+ evaluation/checker_report.md     |  10 ++
+ evaluation/heldout_drafts.json   | 228 +++++++++++++++++++++++++++++++
+ package.json                     |   4 +-
+ scripts/evaluate_checker.ts      |  52 +++++++
+ scripts/evaluate_dataset.py      |   3 +
+ server.ts                        | 156 ++++++---------------
+ src/App.tsx                      |   2 +-
+ src/components/SettingsModal.tsx |   4 +-
+ src/server/security.ts           |  27 ++++
+ src/types.ts                     |   8 +-
+ tests/checker.test.ts            |  44 ++++++
+ 14 files changed, 454 insertions(+), 131 deletions(-)
+ create mode 100644 evaluation/checker_report.md
+ create mode 100644 evaluation/heldout_drafts.json
+ create mode 100644 scripts/evaluate_checker.ts
+ create mode 100644 src/server/security.ts
+ create mode 100644 tests/checker.test.ts
+
+diff --git a/.env.example b/.env.example
+index c1ade5c..b9a9346 100644
+--- a/.env.example
++++ b/.env.example
+@@ -32,3 +32,8 @@ STORAGE_MODE=local
+ # Comma-separated exact frontend origins allowed to call the API from a browser (no wildcard).
+ # Not needed for local development (Vite proxy) .
+ CORS_ORIGINS=
++
++# Required to change settings at runtime in production (send as x-admin-token)
++ADMIN_TOKEN=
++# Extra hostnames API keys may be sent to (comma-separated)
++ALLOWED_LLM_HOSTS=
+diff --git a/DEPLOYMENT.md b/DEPLOYMENT.md
+index 9e08bc1..df2d458 100644
+--- a/DEPLOYMENT.md
++++ b/DEPLOYMENT.md
+@@ -60,3 +60,15 @@ Render provides free Node.js web services with automatic TLS and Git deployment.
+ - **Demo Isolation**: Client-controlled workspace IDs (`x-workspace-id`) provide demonstration separation so multiple users can test custom brand rules simultaneously without collision. It is not cryptographic multi-tenant access control.
+ - **Data Protection**: Sensitive API keys and full drafts are never logged to public standard output or sent in error responses.
+ - **Delete My Data**: Users can erase their workspace rules, sources, and review history at any time using the "Delete My Data" feature.
++
++
++## Security configuration (required for a public deployment)
++| Variable | Purpose |
++|---|---|
++| `ADMIN_TOKEN` | Long random string. Without it, runtime config changes are disabled in production. Send as `x-admin-token`. |
++| `ALLOWED_LLM_HOSTS` | Optional comma-separated extra hostnames API keys may be sent to (defaults: Google Generative Language, OpenAI, Anthropic). |
++| `LLM_MAX_CALLS_PER_HOUR` | Global hourly cap on AI calls (default 30; `0` means unlimited). |
++| `CORS_ORIGINS` | Exact origins allowed cross-origin; leave empty for same-origin only. |
++
++Set `LLM_API_KEY` (or `GEMINI_API_KEY`) as a secret in the host dashboard, never in the repo. The model in `render.yaml`
++may be replaced by its provider; confirm the current model id in the provider's documentation and use "Test connection".
+diff --git a/README.md b/README.md
+index 07f6898..c02cda5 100644
+--- a/README.md
++++ b/README.md
+@@ -21,16 +21,27 @@ BrandTrace AI is a full-stack brand governance and compliance verification platf
+   - INR formats: `Rs 3,200`, `₹3,200`, `INR 3,200`, `Rs. 3200`
+ - **Context-Aware Attribution**: Isolates clauses to prevent false positives when copy mentions third-party plugins or enterprise tiers alongside standard pricing.
+ 
+-### 3. Repeatable Synthetic Evaluation Benchmark (50 Drafts)
+-Includes a 50-example synthetic benchmark covering clean content, prohibited terms, incorrect prices, valid prices, and edge cases.
+-- **Baseline Precision**: 88.89% (16/18) | **Recall**: 57.14% (16/28) | **F1**: 69.57%
+-- **Improved Precision**: **100.00%** (28/28) | **Recall**: **100.00%** (28/28) | **F1**: **100.00%**
+-*(Note: These are synthetic benchmark metrics under controlled conditions, not real-world open-web accuracy.)*
++### 3. Evaluation (synthetic data, read the caveats)
++
++Two evaluations exist, and they measure different things:
++
++- **Real checker, held-out set** (`npm run eval:checker`, report in `evaluation/checker_report.md`): runs the shipped
++  `src/server/checker.ts` on 30 synthetic drafts that were **not** used to tune the rules. Latest run: precision
++  100% (21/21), recall 91.3% (21/23), 0 of 10 clean drafts falsely flagged. The two misses are a price written as
++  "USD 45 a month" and the hype variant "game-changing".
++- **Original 50-draft benchmark** (`npm run eval`): scores a **Python re-implementation** of the rules
++  (`scripts/evaluate_dataset.py`), not the TypeScript code, and the rules were improved while looking at these same
++  drafts. Its 100% is therefore not independent evidence. The drafts are also scored on the real checker in the report above.
++
++All data is synthetic, written by one annotator, and covers only the fictional demo-workspace rules. These figures
++do **not** estimate accuracy on real marketing copy, and **no result exists yet for the LLM analysis**.
+ 
+ ### 4. Basic Safety & Privacy
+ - **Delete My Data**: One-click complete deletion of workspace rules, sources, reviews, and history.
+ - **Shared Demo Protection**: Prevents accidental deletion of shared sample seeds in the default demo workspace.
+-- **Rate Limiting**: In-memory hourly request cap (clearly documented as resetting on server restart).
++- **Rate Limiting**: global in-memory hourly cap on AI calls (default 30, set `LLM_MAX_CALLS_PER_HOUR`); it is shared by all visitors and resets on restart. There is no per-user limit yet.
++- **Locked-down configuration**: `POST /api/config` and `/api/test-connection` need `ADMIN_TOKEN` (header `x-admin-token`); with no token they are disabled in production. API keys are never returned, and API keys are only sent to allow-listed https hosts (extend with `ALLOWED_LLM_HOSTS`).
++- **CORS**: same-origin only unless `CORS_ORIGINS` lists exact origins.
+ - **Request Size Limiting**: 2MB body limit protecting against payload denial-of-service.
+ - **Safe Logging**: Full drafts and upstream API keys are never output to public stdout.
+ 
+@@ -60,6 +71,13 @@ Outputs are recorded in `evaluation/evaluation_report.md`, `evaluation/baseline_
+ 
+ ---
+ 
++## Known limitations
++- Reviews are stored in a JSON file, not SQLite, and are not scoped per workspace; on Render's free tier they are lost on restart.
++- The workspace id is chosen by the client: it separates demo data but is not authentication.
++- Keyword-fallback analysis has no sentiment model; voice and visibility scores are `null` unless an AI provider returns them.
++- Gemini model availability and your API key have not been verified by the maintainer's tests; use "Test connection" after deploying.
++- No automated test covers the HTTP routes or the React UI yet.
++
+ ## ☁️ Deployment
+ 
+ See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions for deploying to **Render**, **Railway**, or **Vercel**.
+diff --git a/evaluation/checker_report.md b/evaluation/checker_report.md
+new file mode 100644
+index 0000000..afe91e5
+--- /dev/null
++++ b/evaluation/checker_report.md
+@@ -0,0 +1,10 @@
++# Evaluation of the real checker (src/server/checker.ts)
++
++| Set | Level | Precision | Recall | F1 | Notes |
++|---|---|---|---|---|---|
++| Held-out (30 drafts, never used for tuning) | finding spans | 100.0% (21/21) | 91.3% (21/23) | 95.5% | clean drafts falsely flagged: 0/10 |
++| Original synthetic (50 drafts, used while improving rules) | whole draft flagged | 100.0% (28/28) | 100.0% (28/28) | 100.0% | optimistic: not independent |
++
++Held-out drafts with missed findings: v06, v20. Drafts with false alarms: none.
++
++Synthetic data, one annotator, demo-workspace rules only. These figures do not estimate accuracy on real marketing copy.
+diff --git a/evaluation/heldout_drafts.json b/evaluation/heldout_drafts.json
+new file mode 100644
+index 0000000..18ea5d2
+--- /dev/null
++++ b/evaluation/heldout_drafts.json
+@@ -0,0 +1,228 @@
++{
++ "note": "Held-out set written AFTER the rules were finalised and never used to tune them. 30 synthetic drafts, one annotator. Span-level labels against the demo workspace rules.",
++ "drafts": [
++  {
++   "id": "c01",
++   "kind": "clean",
++   "text": "BrandTrace Workspace checks content against approved company information before publication.",
++   "expected": []
++  },
++  {
++   "id": "c02",
++   "kind": "clean",
++   "text": "The standard tier is $49/month.",
++   "expected": []
++  },
++  {
++   "id": "c03",
++   "kind": "clean",
++   "text": "Our Enterprise plan is $199/month and includes SSO.",
++   "expected": []
++  },
++  {
++   "id": "c04",
++   "kind": "clean",
++   "text": "Standard pricing in India is ₹3,200/month.",
++   "expected": []
++  },
++  {
++   "id": "c05",
++   "kind": "clean",
++   "text": "A human reviewer makes the final publishing decision on every draft.",
++   "expected": []
++  },
++  {
++   "id": "c06",
++   "kind": "clean",
++   "text": "Join the webinar on March 5 to learn about the 2026 roadmap.",
++   "expected": []
++  },
++  {
++   "id": "c07",
++   "kind": "clean",
++   "text": "The Slack plugin from a marketplace vendor costs $12/month.",
++   "expected": []
++  },
++  {
++   "id": "c08",
++   "kind": "clean",
++   "text": "The team shipped the update on Tuesday and fixed three bugs.",
++   "expected": []
++  },
++  {
++   "id": "c09",
++   "kind": "clean",
++   "text": "Reach us at support@example.com for any questions.",
++   "expected": []
++  },
++  {
++   "id": "c10",
++   "kind": "clean",
++   "text": "BrandTrace Workspace Standard is our most popular tier.",
++   "expected": []
++  },
++  {
++   "id": "v01",
++   "kind": "term",
++   "text": "Introducing BrandTrace Suite for modern teams.",
++   "expected": [
++    "BrandTrace Suite"
++   ]
++  },
++  {
++   "id": "v02",
++   "kind": "term",
++   "text": "brandtrace suite is now available.",
++   "expected": [
++    "brandtrace suite"
++   ]
++  },
++  {
++   "id": "v03",
++   "kind": "price",
++   "text": "The standard tier is only $39/month this quarter.",
++   "expected": [
++    "$39/month"
++   ]
++  },
++  {
++   "id": "v04",
++   "kind": "price",
++   "text": "Standard plan: $59 per month.",
++   "expected": [
++    "$59 per month"
++   ]
++  },
++  {
++   "id": "v05",
++   "kind": "price",
++   "text": "The Standard tier costs ₹2,500/month in India.",
++   "expected": [
++    "₹2,500/month"
++   ]
++  },
++  {
++   "id": "v06",
++   "kind": "price",
++   "text": "Our standard subscription costs USD 45 a month.",
++   "expected": [
++    "USD 45 a month"
++   ]
++  },
++  {
++   "id": "v07",
++   "kind": "hype",
++   "text": "A revolutionary way to manage brand content.",
++   "expected": [
++    "revolutionary"
++   ]
++  },
++  {
++   "id": "v08",
++   "kind": "hype",
++   "text": "The best-in-class review assistant.",
++   "expected": [
++    "best-in-class"
++   ]
++  },
++  {
++   "id": "v09",
++   "kind": "hype",
++   "text": "This tool is a gamechanger for marketers.",
++   "expected": [
++    "gamechanger"
++   ]
++  },
++  {
++   "id": "v10",
++   "kind": "claim",
++   "text": "Content is published with no human review at all.",
++   "expected": [
++    "no human review"
++   ]
++  },
++  {
++   "id": "v11",
++   "kind": "multi",
++   "text": "Meet BrandTrace Suite, a revolutionary product.",
++   "expected": [
++    "BrandTrace Suite",
++    "revolutionary"
++   ]
++  },
++  {
++   "id": "v12",
++   "kind": "multi",
++   "text": "Our standard tier is $39/month, a revolutionary price.",
++   "expected": [
++    "$39/month",
++    "revolutionary"
++   ]
++  },
++  {
++   "id": "v13",
++   "kind": "typo",
++   "text": "BrandTrace Suit helps teams.",
++   "expected": [
++    "BrandTrace Suit"
++   ]
++  },
++  {
++   "id": "v14",
++   "kind": "dash",
++   "text": "BrandTrace–Suite is on sale.",
++   "expected": [
++    "BrandTrace–Suite"
++   ]
++  },
++  {
++   "id": "v15",
++   "kind": "price",
++   "text": "Standard tier: ₹3,000 per month.",
++   "expected": [
++    "₹3,000 per month"
++   ]
++  },
++  {
++   "id": "v16",
++   "kind": "claim",
++   "text": "Everything is approved automatically with no human review.",
++   "expected": [
++    "no human review"
++   ]
++  },
++  {
++   "id": "v17",
++   "kind": "hype",
++   "text": "Hype alert: BEST-IN-CLASS results guaranteed.",
++   "expected": [
++    "BEST-IN-CLASS"
++   ]
++  },
++  {
++   "id": "v18",
++   "kind": "multi",
++   "text": "Try the BrandTrace Suite trial; standard tier $29/month.",
++   "expected": [
++    "BrandTrace Suite",
++    "$29/month"
++   ]
++  },
++  {
++   "id": "v19",
++   "kind": "price",
++   "text": "The standard plan is priced at 39 USD per month.",
++   "expected": [
++    "39 USD per month"
++   ]
++  },
++  {
++   "id": "v20",
++   "kind": "hype_variant",
++   "text": "Our game-changing workspace helps teams ship faster.",
++   "expected": [
++    "game-changing"
++   ]
++  }
++ ]
++}
+\ No newline at end of file
+diff --git a/package.json b/package.json
+index 4c8ad48..83f157e 100644
+--- a/package.json
++++ b/package.json
+@@ -11,7 +11,9 @@
+     "clean": "rm -rf dist server.js",
+     "lint": "tsc --noEmit",
+     "eval": "python3 scripts/evaluate_dataset.py",
+-    "test:eval": "python3 scripts/evaluate_dataset.py"
++    "test:eval": "python3 scripts/evaluate_dataset.py",
++    "test": "tsx --test tests/*.test.ts",
++    "eval:checker": "tsx scripts/evaluate_checker.ts"
+   },
+   "dependencies": {
+     "@google/genai": "^2.4.0",
+diff --git a/scripts/evaluate_checker.ts b/scripts/evaluate_checker.ts
+new file mode 100644
+index 0000000..44e729f
+--- /dev/null
++++ b/scripts/evaluate_checker.ts
+@@ -0,0 +1,52 @@
++// Evaluates the REAL checker (src/server/checker.ts) against the demo-workspace rules.
++//   npm run eval:checker      -> writes evaluation/checker_report.md
++import fs from 'node:fs';
++import os from 'node:os';
++import path from 'node:path';
++import { getDatabase, seedDemoWorkspace } from '../src/server/db.ts';
++import { runDynamicRules } from '../src/server/checker.ts';
++
++const root = path.resolve(import.meta.dirname, '..');
++const db = getDatabase(path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bt-eval-')), 'eval.db'));
++seedDemoWorkspace(db, true);
++
++type Row = { id: string; text: string; expected: string[] };
++const overlap = (a: [number, number], b: [number, number]) => a[0] < b[1] && b[0] < a[1];
++
++function run(rows: Row[]) {
++  let tp = 0, fp = 0, fn = 0, cleanTotal = 0, cleanFlagged = 0; const misses: string[] = [], falseAlarms: string[] = [];
++  for (const r of rows) {
++    const found = runDynamicRules(db, 'demo', r.text);
++    const exp = r.expected.map((q) => { const s = r.text.toLowerCase().indexOf(q.toLowerCase()); return [s, s + q.length] as [number, number]; });
++    const used = new Set<number>(); let matched = 0;
++    for (const f of found) {
++      const i = exp.findIndex((e, k) => !used.has(k) && overlap([f.start, f.end], e));
++      if (i >= 0) { used.add(i); matched++; } else fp++;
++    }
++    tp += matched; fn += exp.length - matched;
++    if (exp.length === 0) { cleanTotal++; if (found.length) { cleanFlagged++; falseAlarms.push(r.id); } }
++    if (exp.length - matched > 0) misses.push(r.id);
++    if (found.length > matched && exp.length > 0) falseAlarms.push(r.id);
++  }
++  const p = tp + fp ? tp / (tp + fp) : NaN, rc = tp + fn ? tp / (tp + fn) : NaN;
++  return { tp, fp, fn, p, rc, f1: 2 * p * rc / (p + rc), cleanTotal, cleanFlagged, misses, falseAlarms };
++}
++
++const held = JSON.parse(fs.readFileSync(path.join(root, 'evaluation/heldout_drafts.json'), 'utf8')).drafts as Row[];
++const old = (JSON.parse(fs.readFileSync(path.join(root, 'evaluation/synthetic_drafts.json'), 'utf8')) as any[]);
++// The original 50 drafts have draft-level labels only: score whether the draft is flagged at all.
++let dtp = 0, dfp = 0, dfn = 0, dtn = 0;
++for (const d of old) { const flagged = runDynamicRules(db, 'demo', d.text).length > 0; if (flagged && d.expected_violation) dtp++; else if (flagged) dfp++; else if (d.expected_violation) dfn++; else dtn++; }
++const h = run(held); const pc = (x: number) => (x * 100).toFixed(1) + '%';
++const md = `# Evaluation of the real checker (src/server/checker.ts)
++
++| Set | Level | Precision | Recall | F1 | Notes |
++|---|---|---|---|---|---|
++| Held-out (30 drafts, never used for tuning) | finding spans | ${pc(h.p)} (${h.tp}/${h.tp + h.fp}) | ${pc(h.rc)} (${h.tp}/${h.tp + h.fn}) | ${pc(h.f1)} | clean drafts falsely flagged: ${h.cleanFlagged}/${h.cleanTotal} |
++| Original synthetic (50 drafts, used while improving rules) | whole draft flagged | ${pc(dtp / (dtp + dfp))} (${dtp}/${dtp + dfp}) | ${pc(dtp / (dtp + dfn))} (${dtp}/${dtp + dfn}) | ${pc(2 * dtp / (2 * dtp + dfp + dfn))} | optimistic: not independent |
++
++Held-out drafts with missed findings: ${h.misses.join(', ') || 'none'}. Drafts with false alarms: ${[...new Set(h.falseAlarms)].join(', ') || 'none'}.
++
++Synthetic data, one annotator, demo-workspace rules only. These figures do not estimate accuracy on real marketing copy.
++`;
++fs.writeFileSync(path.join(root, 'evaluation/checker_report.md'), md); console.log(md);
+diff --git a/scripts/evaluate_dataset.py b/scripts/evaluate_dataset.py
+index 16c2ba1..259d142 100644
+--- a/scripts/evaluate_dataset.py
++++ b/scripts/evaluate_dataset.py
+@@ -1,5 +1,8 @@
+ #!/usr/bin/env python3
+ """
++NOTE: this evaluates a PYTHON RE-IMPLEMENTATION of the rules, not src/server/checker.ts.
++Use `npm run eval:checker` to evaluate the real checker on a held-out set.
++
+ Repeatable Synthetic Evaluation Runner for BrandTrace Rule Engine
+ Compares baseline deterministic rules vs improved deterministic rules.
+ """
+diff --git a/server.ts b/server.ts
+index aabae6b..2893f66 100644
+--- a/server.ts
++++ b/server.ts
+@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
+ import { GoogleGenAI } from '@google/genai';
+ import { getDatabase, seedDemoWorkspace } from './src/server/db.ts';
+ import { runDynamicRules } from './src/server/checker.ts';
++import { isAllowedBaseUrl, tokensMatch } from './src/server/security.ts';
+ 
+ dotenv.config();
+ 
+@@ -49,7 +50,7 @@ const runtimeConfig: RuntimeConfig = {
+   llm_timeout_seconds: Number(process.env.LLM_TIMEOUT_SECONDS || 30),
+   llm_max_retries: Number(process.env.LLM_MAX_RETRIES || 1),
+   llm_retry_delay_seconds: Number(process.env.LLM_RETRY_DELAY_SECONDS || 1),
+-  llm_max_calls_per_hour: Number(process.env.LLM_MAX_CALLS_PER_HOUR || 0),
++  llm_max_calls_per_hour: Number(process.env.LLM_MAX_CALLS_PER_HOUR || 30),
+   brandtrace_db: process.env.BRANDTRACE_DB || 'backend/brandtrace.db',
+   storage_mode: (process.env.STORAGE_MODE as any) || 'local',
+   cors_origins: process.env.CORS_ORIGINS || '',
+@@ -133,106 +134,19 @@ function saveReviews(reviews: any[]) {
+ function initializeSeedData() {
+   const current = loadReviews();
+   if (current.length === 0) {
+-    const initialReviews = [
+-      {
+-        id: 'rev-001',
+-        title: 'Notion 3.0 AI Workspace Real-world Review',
+-        brandName: 'Notion',
+-        productOrService: 'Notion AI & Team Workspace',
+-        source: 'customer_review',
+-        content: `I have been using Notion for our 45-person engineering and product design team for over two years. Notion's database flexibility and document linking are unmatched. When they added Notion AI, it accelerated our sprint summaries. However, search indexing can feel sluggish with large doc trees, and the offline mode is still frustratingly unreliable. Compared to Obsidian or Coda, Notion wins on collaborative aesthetics and team onboarding, but power users keep hitting the markdown rendering quirks. Overall, our team wouldn't trade it despite the occasional latency.`,
+-        competitors: ['Obsidian', 'Coda'],
+-        tags: ['Productivity', 'SaaS', 'AI Workspace', 'Collaboration'],
+-        createdAt: new Date(Date.now() - 3600 * 24 * 3 * 1000).toISOString(),
+-        analysis: {
+-          overallSentiment: 'positive',
+-          sentimentScore: 78,
+-          sentimentBreakdown: { positive: 65, neutral: 25, negative: 10 },
+-          brandVoiceScore: 84,
+-          brandVoiceTone: 'Innovative, modern, productivity-centric',
+-          brandVoiceTags: ['Flexible', 'Modern Aesthetic', 'Collaborative', 'Occasional Latency'],
+-          aiVisibilityScore: 92,
+-          aiCitationProbability: 'High',
+-          hallucinationRisk: 'Low',
+-          executiveSummary: 'Strong customer brand affinity centered on team collaboration and AI productivity. Vulnerabilities focus on offline availability and large-scale search performance.',
+-          strengths: ['Unmatched database flexibility', 'Fast sprint summarization via integrated AI', 'High team onboarding velocity'],
+-          vulnerabilities: ['Sluggish search on enterprise doc trees', 'Unreliable offline capability', 'Markdown rendering quirks'],
+-          keyThemes: [
+-            { theme: 'Productivity & Workflow', sentiment: 'positive', weight: 9, quotes: ['accelerated our sprint summaries', 'unmatched database flexibility'] },
+-            { theme: 'Performance & Offline', sentiment: 'negative', weight: 6, quotes: ['search indexing can feel sluggish', 'offline mode is frustratingly unreliable'] },
+-          ],
+-          brandClaims: [
+-            { claim: 'Notion AI accelerates sprint documentation', status: 'verified', rationale: 'Confirmed by user workflow speedups.' },
+-            { claim: 'Offline mode is fully supported', status: 'disputed', rationale: 'Customer experience indicates persistent offline sync issues.' },
+-          ],
+-          competitorMentions: [
+-            { name: 'Obsidian', context: 'Comparison on offline reliability and markdown rendering', sentimentVsBrand: 'neutral' },
+-            { name: 'Coda', context: 'Comparison on UI aesthetics and team onboarding', sentimentVsBrand: 'favorable' },
+-          ],
+-          actionableRecommendations: [
+-            'Prioritize offline sync reliability in marketing messaging and product roadmap.',
+-            'Produce GEO (Generative Engine Optimization) technical documentation highlighting fast search query optimizations.'
+-          ],
+-          modelUsed: 'claude-3-5-sonnet-20241022',
+-          provider: 'anthropic',
+-          latencyMs: 1420,
+-          tokensUsed: { prompt: 420, completion: 380, total: 800 },
+-          analyzedAt: new Date(Date.now() - 3600 * 24 * 3 * 1000).toISOString(),
+-          isSimulation: false,
+-        }
+-      },
+-      {
+-        id: 'rev-002',
+-        title: 'ChatGPT & Claude Brand Perception Audit: Shopify vs WooCommerce',
+-        brandName: 'Shopify',
+-        productOrService: 'Shopify Plus & Checkout',
+-        source: 'ai_chat_response',
+-        content: `When asking major LLMs (ChatGPT-4o, Claude 3.5 Sonnet, and Gemini) for recommendations on enterprise e-commerce platforms, Shopify Plus is consistently cited as the leading solution for conversion rate optimization and frictionless checkout. The AI models repeatedly highlight Shop Pay's 1-click checkout conversion advantage. However, AI responses frequently caution prospective merchants about high app ecosystem transaction fees and vendor lock-in compared to open-source alternatives like WooCommerce.`,
+-        competitors: ['WooCommerce', 'BigCommerce'],
+-        tags: ['E-Commerce', 'Checkout', 'AI Audit', 'Conversion'],
+-        createdAt: new Date(Date.now() - 3600 * 24 * 1 * 1000).toISOString(),
+-        analysis: {
+-          overallSentiment: 'positive',
+-          sentimentScore: 82,
+-          sentimentBreakdown: { positive: 70, neutral: 20, negative: 10 },
+-          brandVoiceScore: 90,
+-          brandVoiceTone: 'Authoritative commerce infrastructure',
+-          brandVoiceTags: ['High Conversion', 'Enterprise Grade', 'Shop Pay Dominance'],
+-          aiVisibilityScore: 96,
+-          aiCitationProbability: 'High',
+-          hallucinationRisk: 'Low',
+-          executiveSummary: 'AI models consistently cite Shopify as the industry standard for checkout conversion, with high brand recall on Shop Pay.',
+-          strengths: ['High AI citation frequency in commerce queries', 'Direct association with superior conversion rates', 'Shop Pay frictionless UX'],
+-          vulnerabilities: ['AI warnings regarding app store fee stacking', 'Vendor lock-in friction cited against WooCommerce'],
+-          keyThemes: [
+-            { theme: 'Checkout Conversion', sentiment: 'positive', weight: 10, quotes: ['consistently cited as the leading solution', 'Shop Pay 1-click conversion advantage'] },
+-            { theme: 'Total Cost of Ownership', sentiment: 'neutral', weight: 7, quotes: ['caution prospective merchants about high app fees and vendor lock-in'] }
+-          ],
+-          brandClaims: [
+-            { claim: 'Shop Pay provides superior conversion', status: 'verified', rationale: 'Widely cited industry benchmark.' }
+-          ],
+-          competitorMentions: [
+-            { name: 'WooCommerce', context: 'Open-source alternative cited for zero vendor lock-in', sentimentVsBrand: 'neutral' }
+-          ],
+-          actionableRecommendations: [
+-            'Publish transparent TCO (Total Cost of Ownership) comparison calculators to rebut AI mentions of app fee stacking.',
+-            'Strengthen AI knowledge graph entity markers around developer flexibility.'
+-          ],
+-          modelUsed: 'gemini-3.8-flash',
+-          provider: 'gemini',
+-          latencyMs: 980,
+-          tokensUsed: { prompt: 350, completion: 310, total: 660 },
+-          analyzedAt: new Date(Date.now() - 3600 * 24 * 1 * 1000).toISOString(),
+-          isSimulation: false,
+-        }
+-      }
+-    ];
+-    saveReviews(initialReviews);
++    // No sample reviews are stored: every review shown comes from a real analysis run by the user.
++    saveReviews([]);
+   }
+ }
+ 
+ initializeSeedData();
+ 
++// Runtime config changes need ADMIN_TOKEN (or local development with no token set).
++function isAdminRequest(req: express.Request): boolean {
++  const token = process.env.ADMIN_TOKEN;
++  return token ? tokensMatch(req.headers['x-admin-token'], token) : IS_DEV;
++}
++
+ // Helper: Sleep
+ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+ 
+@@ -289,7 +203,7 @@ function generateHeuristicAnalysis(
+       neutral: neutralPercent,
+       negative: negativePercent,
+     },
+-    brandVoiceScore: Math.min(95, 65 + (posCount % 20)),
++    brandVoiceScore: null, // not measured by the keyword fallback
+     brandVoiceTone: score > 70 ? 'Authoritative, Customer-Centric, Modern' : score > 45 ? 'Informative with Critical Feedback' : 'Distressed Customer Friction',
+     brandVoiceTags: [
+       brand + ' Core Value',
+@@ -297,9 +211,9 @@ function generateHeuristicAnalysis(
+       'Market Relevance',
+       'AI Retrievable Sentiment'
+     ],
+-    aiVisibilityScore: Math.min(98, 75 + ((content.length / 50) % 20)),
+-    aiCitationProbability: content.length > 200 ? 'High' : 'Medium',
+-    hallucinationRisk: 'Low',
++    aiVisibilityScore: null, // not measured by the keyword fallback
++    aiCitationProbability: 'Not assessed',
++    hallucinationRisk: 'Not assessed',
+     executiveSummary: `Brand analysis for ${brand} indicates a ${overallSentiment} profile with an aggregate brand sentiment score of ${score}/100. Key discussion drivers emphasize product capability, operational reliability, and competitive comparisons against ${detectedCompetitors.slice(0, 2).join(' and ')}.`,
+     strengths: [
+       `High recognition for core functionality in ${productOrService || 'key service offerings'}`,
+@@ -630,9 +544,8 @@ async function startServer() {
+       if (allowed.includes(origin)) {
+         res.setHeader('Access-Control-Allow-Origin', origin);
+       }
+-    } else {
+-      res.setHeader('Access-Control-Allow-Origin', '*');
+     }
++    // No CORS_ORIGINS set: no cross-origin access (the bundled frontend is served from the same origin).
+ 
+     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
+@@ -703,16 +616,15 @@ async function startServer() {
+       message,
+       llm_provider: runtimeConfig.llm_provider,
+       has_api_key: Boolean(effectiveKey),
+-      masked_api_key: maskKey(effectiveKey),
++      masked_api_key: '', // never return any part of the key
+       llm_model: runtimeConfig.llm_model,
+       llm_base_url: runtimeConfig.llm_base_url,
+       llm_timeout_seconds: runtimeConfig.llm_timeout_seconds,
+       llm_max_retries: runtimeConfig.llm_max_retries,
+       llm_retry_delay_seconds: runtimeConfig.llm_retry_delay_seconds,
+       llm_max_calls_per_hour: runtimeConfig.llm_max_calls_per_hour,
+-      brandtrace_db: runtimeConfig.brandtrace_db,
++      brandtrace_db: '',
+       storage_mode: runtimeConfig.storage_mode,
+-      cors_origins: runtimeConfig.cors_origins,
+       calls_this_hour: hourlyCallCount,
+       calls_remaining: rate.remaining,
+       reset_in_seconds: rate.resetIn,
+@@ -1568,6 +1480,10 @@ ${draft}
+   // 3. Update Configuration (in-app settings)
+   app.post('/api/config', (req, res) => {
+     try {
++      if (!isAdminRequest(req)) {
++        res.status(403).json({ success: false, error: 'Runtime configuration changes are disabled. Set environment variables on the server, or set ADMIN_TOKEN and send it in the x-admin-token header.' });
++        return;
++      }
+       const {
+         llm_provider,
+         llm_api_key,
+@@ -1584,13 +1500,18 @@ ${draft}
+       if (llm_provider !== undefined) runtimeConfig.llm_provider = llm_provider;
+       if (llm_api_key !== undefined) runtimeConfig.llm_api_key = llm_api_key;
+       if (llm_model !== undefined) runtimeConfig.llm_model = llm_model;
+-      if (llm_base_url !== undefined) runtimeConfig.llm_base_url = llm_base_url;
++      if (llm_base_url !== undefined) {
++        if (!isAllowedBaseUrl(llm_base_url)) {
++          res.status(400).json({ success: false, error: 'llm_base_url must be an https URL on an allow-listed host (see ALLOWED_LLM_HOSTS).' });
++          return;
++        }
++        runtimeConfig.llm_base_url = llm_base_url;
++      }
+       if (llm_timeout_seconds !== undefined) runtimeConfig.llm_timeout_seconds = Number(llm_timeout_seconds);
+       if (llm_max_retries !== undefined) runtimeConfig.llm_max_retries = Number(llm_max_retries);
+       if (llm_retry_delay_seconds !== undefined) runtimeConfig.llm_retry_delay_seconds = Number(llm_retry_delay_seconds);
+       if (llm_max_calls_per_hour !== undefined) runtimeConfig.llm_max_calls_per_hour = Number(llm_max_calls_per_hour);
+-      if (brandtrace_db !== undefined) runtimeConfig.brandtrace_db = brandtrace_db;
+-      if (storage_mode !== undefined) runtimeConfig.storage_mode = storage_mode;
++      // brandtrace_db and storage_mode are startup-only settings and are not changeable at runtime.
+ 
+       const rate = checkRateLimit();
+       const effectiveKey = runtimeConfig.llm_api_key || (runtimeConfig.llm_provider === 'gemini' ? process.env.GEMINI_API_KEY || '' : '');
+@@ -1601,14 +1522,14 @@ ${draft}
+         config: {
+           llm_provider: runtimeConfig.llm_provider,
+           has_api_key: Boolean(effectiveKey),
+-          masked_api_key: maskKey(effectiveKey),
++          masked_api_key: '', // never return any part of the key
+           llm_model: runtimeConfig.llm_model,
+           llm_base_url: runtimeConfig.llm_base_url,
+           llm_timeout_seconds: runtimeConfig.llm_timeout_seconds,
+           llm_max_retries: runtimeConfig.llm_max_retries,
+           llm_retry_delay_seconds: runtimeConfig.llm_retry_delay_seconds,
+           llm_max_calls_per_hour: runtimeConfig.llm_max_calls_per_hour,
+-          brandtrace_db: runtimeConfig.brandtrace_db,
++          brandtrace_db: '',
+           storage_mode: runtimeConfig.storage_mode,
+           calls_this_hour: hourlyCallCount,
+           calls_remaining: rate.remaining,
+@@ -1624,6 +1545,10 @@ ${draft}
+   // 4. Test Connection
+   app.post('/api/test-connection', async (req, res) => {
+     const { provider, apiKey, model, baseUrl } = req.body;
++    if (!isAdminRequest(req) || (baseUrl !== undefined && !isAllowedBaseUrl(baseUrl))) {
++      res.status(403).json({ success: false, error: 'Connection tests need the admin token and an allow-listed https base URL.' });
++      return;
++    }
+     const testProvider = provider || runtimeConfig.llm_provider;
+     const testKey = apiKey || runtimeConfig.llm_api_key || (testProvider === 'gemini' ? process.env.GEMINI_API_KEY || '' : '');
+     const testModel = model || runtimeConfig.llm_model;
+@@ -1751,10 +1676,10 @@ ${draft}
+         overallSentiment: parsedResult.overallSentiment || 'neutral',
+         sentimentScore: Number(parsedResult.sentimentScore ?? 70),
+         sentimentBreakdown: parsedResult.sentimentBreakdown || { positive: 60, neutral: 30, negative: 10 },
+-        brandVoiceScore: Number(parsedResult.brandVoiceScore ?? 80),
++        brandVoiceScore: (parsedResult.brandVoiceScore == null ? null : Number(parsedResult.brandVoiceScore)),
+         brandVoiceTone: parsedResult.brandVoiceTone || 'Modern & Direct',
+         brandVoiceTags: parsedResult.brandVoiceTags || [brandName + ' Core'],
+-        aiVisibilityScore: Number(parsedResult.aiVisibilityScore ?? 85),
++        aiVisibilityScore: (parsedResult.aiVisibilityScore == null ? null : Number(parsedResult.aiVisibilityScore)),
+         aiCitationProbability: parsedResult.aiCitationProbability || 'High',
+         hallucinationRisk: parsedResult.hallucinationRisk || 'Low',
+         executiveSummary: parsedResult.executiveSummary || 'Brand audit successfully generated.',
+@@ -1801,7 +1726,7 @@ ${draft}
+       reviews,
+       count: reviews.length,
+       storage_mode: runtimeConfig.storage_mode,
+-      brandtrace_db: runtimeConfig.brandtrace_db,
++      brandtrace_db: '',
+     });
+   });
+ 
+@@ -1856,10 +1781,7 @@ ${draft}
+   });
+ 
+   app.post('/api/reviews/seed', (req, res) => {
+-    inMemoryReviews = [];
+-    initializeSeedData();
+-    const reviews = loadReviews();
+-    res.json({ success: true, reviews, count: reviews.length });
++    res.status(410).json({ success: false, error: 'Bundled sample reviews were removed. Run an analysis to create your first review.' });
+   });
+ 
+   // ---- VITE / STATIC INTEGRATION ----
+diff --git a/src/App.tsx b/src/App.tsx
+index 499487e..9294431 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -328,7 +328,7 @@ function BrandTraceMain() {
+         showToast('success', 'Sample reviews seeded into SQLite database!');
+         loadReviews();
+       } else {
+-        showToast('error', 'Failed to seed sample reviews');
++        showToast('error', 'Bundled sample reviews were removed. Run an analysis to create your first review.');
+       }
+     } catch (err) {
+       showToast('error', 'Error seeding database');
+diff --git a/src/components/SettingsModal.tsx b/src/components/SettingsModal.tsx
+index ce9559e..1b06109 100644
+--- a/src/components/SettingsModal.tsx
++++ b/src/components/SettingsModal.tsx
+@@ -441,7 +441,7 @@ CORS_ORIGINS=`;
+                 {config?.has_api_key && (
+                   <span className="text-[11px] text-emerald-500 font-medium flex items-center gap-1">
+                     <CheckCircle2 className="w-3 h-3" />
+-                    Key configured on server ({config.masked_api_key})
++                    Key configured on server
+                   </span>
+                 )}
+               </div>
+@@ -452,7 +452,7 @@ CORS_ORIGINS=`;
+                   onChange={(e) => setApiKey(e.target.value)}
+                   placeholder={
+                     config?.has_api_key
+-                      ? `Saved (${config.masked_api_key}). Leave empty to keep or paste new key.`
++                      ? `Saved. Leave empty to keep or paste new key.`
+                       : 'Enter API key...'
+                   }
+                   className={`w-full rounded-xl px-4 py-2.5 text-sm font-mono transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 border ${
+diff --git a/src/server/security.ts b/src/server/security.ts
+new file mode 100644
+index 0000000..66c7091
+--- /dev/null
++++ b/src/server/security.ts
+@@ -0,0 +1,27 @@
++import crypto from 'node:crypto';
++
++// Hosts the server may send an API key to. Extra hosts must be added by the operator via ALLOWED_LLM_HOSTS.
++const ALLOWED_HOSTS = new Set(['generativelanguage.googleapis.com', 'api.openai.com', 'api.anthropic.com']);
++
++/** True only for an https URL on an allow-listed host (or the empty string, meaning "use the default"). */
++export function isAllowedBaseUrl(raw: unknown): boolean {
++  if (raw === '') return true;
++  if (typeof raw !== 'string') return false;
++  try {
++    const u = new URL(raw);
++    if (u.protocol !== 'https:' || u.username || u.password) return false;
++    const extra = (process.env.ALLOWED_LLM_HOSTS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
++    const host = u.hostname.toLowerCase();
++    return ALLOWED_HOSTS.has(host) || extra.includes(host);
++  } catch {
++    return false;
++  }
++}
++
++/** Constant-time comparison of an admin token. Missing values never match. */
++export function tokensMatch(sent: unknown, expected: string | undefined): boolean {
++  if (!expected || typeof sent !== 'string') return false;
++  const a = crypto.createHash('sha256').update(sent).digest();
++  const b = crypto.createHash('sha256').update(expected).digest();
++  return crypto.timingSafeEqual(a, b);
++}
+diff --git a/src/types.ts b/src/types.ts
+index 513f680..96bec1c 100644
+--- a/src/types.ts
++++ b/src/types.ts
+@@ -163,12 +163,12 @@ export interface BrandAnalysisResult {
+     neutral: number;
+     negative: number;
+   };
+-  brandVoiceScore: number;
++  brandVoiceScore: number | null;
+   brandVoiceTone: string;
+   brandVoiceTags: string[];
+-  aiVisibilityScore: number;
+-  aiCitationProbability: 'High' | 'Medium' | 'Low';
+-  hallucinationRisk: 'Low' | 'Moderate' | 'High';
++  aiVisibilityScore: number | null;
++  aiCitationProbability: 'High' | 'Medium' | 'Low' | 'Not assessed';
++  hallucinationRisk: 'Low' | 'Moderate' | 'High' | 'Not assessed';
+   executiveSummary: string;
+   strengths: string[];
+   vulnerabilities: string[];
+diff --git a/tests/checker.test.ts b/tests/checker.test.ts
+new file mode 100644
+index 0000000..65b3afc
+--- /dev/null
++++ b/tests/checker.test.ts
+@@ -0,0 +1,44 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import os from 'node:os';
++import path from 'node:path';
++import { getDatabase, seedDemoWorkspace } from '../src/server/db.ts';
++import { runDynamicRules } from '../src/server/checker.ts';
++import { isAllowedBaseUrl, tokensMatch } from '../src/server/security.ts';
++
++const db = getDatabase(path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bt-test-')), 't.db'));
++seedDemoWorkspace(db, true);
++const check = (t: string) => runDynamicRules(db, 'demo', t);
++
++test('flags the retired product name and cites a source', () => {
++  const f = check('Introducing BrandTrace Suite today.');
++  assert.ok(f.length >= 1);
++  assert.equal(f[0].quote.toLowerCase(), 'brandtrace suite');
++  assert.ok(f[0].source);
++});
++test('flags a wrong standard-tier price', () => assert.ok(check('The standard tier is $39/month.').length >= 1));
++test('does not flag the approved price', () => assert.equal(check('The standard tier is $49/month.').length, 0));
++test('does not flag an enterprise price', () => assert.equal(check('Enterprise is $199/month.').length, 0));
++test('flags a hype word', () => assert.ok(check('A revolutionary tool.').length >= 1));
++test('flags the human-review claim', () => assert.ok(check('Published with no human review.').length >= 1));
++test('clean text produces no findings', () => assert.equal(check('The team shipped the update on Tuesday.').length, 0));
++test('finding offsets point at the quoted text', () => {
++  const text = 'Meet BrandTrace Suite now.';
++  for (const f of check(text)) assert.equal(text.slice(f.start, f.end).toLowerCase(), f.quote.toLowerCase());
++});
++
++test('base URL allow-list', () => {
++  assert.ok(isAllowedBaseUrl('https://generativelanguage.googleapis.com/v1beta/openai/'));
++  assert.ok(isAllowedBaseUrl(''));
++  assert.equal(isAllowedBaseUrl('https://evil.example.com/v1'), false);
++  assert.equal(isAllowedBaseUrl('http://api.openai.com/v1'), false);
++  assert.equal(isAllowedBaseUrl('https://user:pw@api.openai.com/v1'), false);
++  assert.equal(isAllowedBaseUrl(42), false);
++});
++test('admin token comparison', () => {
++  assert.ok(tokensMatch('secret', 'secret'));
++  assert.equal(tokensMatch('wrong', 'secret'), false);
++  assert.equal(tokensMatch(undefined, 'secret'), false);
++  assert.equal(tokensMatch('secret', undefined), false);
++});
+-- 
+2.43.0
+

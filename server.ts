@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
 import { getDatabase, seedDemoWorkspace } from './src/server/db.ts';
 import { runDynamicRules } from './src/server/checker.ts';
+import { isAllowedBaseUrl, tokensMatch } from './src/server/security.ts';
 
 dotenv.config();
 
@@ -49,7 +50,7 @@ const runtimeConfig: RuntimeConfig = {
   llm_timeout_seconds: Number(process.env.LLM_TIMEOUT_SECONDS || 30),
   llm_max_retries: Number(process.env.LLM_MAX_RETRIES || 1),
   llm_retry_delay_seconds: Number(process.env.LLM_RETRY_DELAY_SECONDS || 1),
-  llm_max_calls_per_hour: Number(process.env.LLM_MAX_CALLS_PER_HOUR || 0),
+  llm_max_calls_per_hour: Number(process.env.LLM_MAX_CALLS_PER_HOUR || 30),
   brandtrace_db: process.env.BRANDTRACE_DB || 'backend/brandtrace.db',
   storage_mode: (process.env.STORAGE_MODE as any) || 'local',
   cors_origins: process.env.CORS_ORIGINS || '',
@@ -133,105 +134,18 @@ function saveReviews(reviews: any[]) {
 function initializeSeedData() {
   const current = loadReviews();
   if (current.length === 0) {
-    const initialReviews = [
-      {
-        id: 'rev-001',
-        title: 'Notion 3.0 AI Workspace Real-world Review',
-        brandName: 'Notion',
-        productOrService: 'Notion AI & Team Workspace',
-        source: 'customer_review',
-        content: `I have been using Notion for our 45-person engineering and product design team for over two years. Notion's database flexibility and document linking are unmatched. When they added Notion AI, it accelerated our sprint summaries. However, search indexing can feel sluggish with large doc trees, and the offline mode is still frustratingly unreliable. Compared to Obsidian or Coda, Notion wins on collaborative aesthetics and team onboarding, but power users keep hitting the markdown rendering quirks. Overall, our team wouldn't trade it despite the occasional latency.`,
-        competitors: ['Obsidian', 'Coda'],
-        tags: ['Productivity', 'SaaS', 'AI Workspace', 'Collaboration'],
-        createdAt: new Date(Date.now() - 3600 * 24 * 3 * 1000).toISOString(),
-        analysis: {
-          overallSentiment: 'positive',
-          sentimentScore: 78,
-          sentimentBreakdown: { positive: 65, neutral: 25, negative: 10 },
-          brandVoiceScore: 84,
-          brandVoiceTone: 'Innovative, modern, productivity-centric',
-          brandVoiceTags: ['Flexible', 'Modern Aesthetic', 'Collaborative', 'Occasional Latency'],
-          aiVisibilityScore: 92,
-          aiCitationProbability: 'High',
-          hallucinationRisk: 'Low',
-          executiveSummary: 'Strong customer brand affinity centered on team collaboration and AI productivity. Vulnerabilities focus on offline availability and large-scale search performance.',
-          strengths: ['Unmatched database flexibility', 'Fast sprint summarization via integrated AI', 'High team onboarding velocity'],
-          vulnerabilities: ['Sluggish search on enterprise doc trees', 'Unreliable offline capability', 'Markdown rendering quirks'],
-          keyThemes: [
-            { theme: 'Productivity & Workflow', sentiment: 'positive', weight: 9, quotes: ['accelerated our sprint summaries', 'unmatched database flexibility'] },
-            { theme: 'Performance & Offline', sentiment: 'negative', weight: 6, quotes: ['search indexing can feel sluggish', 'offline mode is frustratingly unreliable'] },
-          ],
-          brandClaims: [
-            { claim: 'Notion AI accelerates sprint documentation', status: 'verified', rationale: 'Confirmed by user workflow speedups.' },
-            { claim: 'Offline mode is fully supported', status: 'disputed', rationale: 'Customer experience indicates persistent offline sync issues.' },
-          ],
-          competitorMentions: [
-            { name: 'Obsidian', context: 'Comparison on offline reliability and markdown rendering', sentimentVsBrand: 'neutral' },
-            { name: 'Coda', context: 'Comparison on UI aesthetics and team onboarding', sentimentVsBrand: 'favorable' },
-          ],
-          actionableRecommendations: [
-            'Prioritize offline sync reliability in marketing messaging and product roadmap.',
-            'Produce GEO (Generative Engine Optimization) technical documentation highlighting fast search query optimizations.'
-          ],
-          modelUsed: 'claude-3-5-sonnet-20241022',
-          provider: 'anthropic',
-          latencyMs: 1420,
-          tokensUsed: { prompt: 420, completion: 380, total: 800 },
-          analyzedAt: new Date(Date.now() - 3600 * 24 * 3 * 1000).toISOString(),
-          isSimulation: false,
-        }
-      },
-      {
-        id: 'rev-002',
-        title: 'ChatGPT & Claude Brand Perception Audit: Shopify vs WooCommerce',
-        brandName: 'Shopify',
-        productOrService: 'Shopify Plus & Checkout',
-        source: 'ai_chat_response',
-        content: `When asking major LLMs (ChatGPT-4o, Claude 3.5 Sonnet, and Gemini) for recommendations on enterprise e-commerce platforms, Shopify Plus is consistently cited as the leading solution for conversion rate optimization and frictionless checkout. The AI models repeatedly highlight Shop Pay's 1-click checkout conversion advantage. However, AI responses frequently caution prospective merchants about high app ecosystem transaction fees and vendor lock-in compared to open-source alternatives like WooCommerce.`,
-        competitors: ['WooCommerce', 'BigCommerce'],
-        tags: ['E-Commerce', 'Checkout', 'AI Audit', 'Conversion'],
-        createdAt: new Date(Date.now() - 3600 * 24 * 1 * 1000).toISOString(),
-        analysis: {
-          overallSentiment: 'positive',
-          sentimentScore: 82,
-          sentimentBreakdown: { positive: 70, neutral: 20, negative: 10 },
-          brandVoiceScore: 90,
-          brandVoiceTone: 'Authoritative commerce infrastructure',
-          brandVoiceTags: ['High Conversion', 'Enterprise Grade', 'Shop Pay Dominance'],
-          aiVisibilityScore: 96,
-          aiCitationProbability: 'High',
-          hallucinationRisk: 'Low',
-          executiveSummary: 'AI models consistently cite Shopify as the industry standard for checkout conversion, with high brand recall on Shop Pay.',
-          strengths: ['High AI citation frequency in commerce queries', 'Direct association with superior conversion rates', 'Shop Pay frictionless UX'],
-          vulnerabilities: ['AI warnings regarding app store fee stacking', 'Vendor lock-in friction cited against WooCommerce'],
-          keyThemes: [
-            { theme: 'Checkout Conversion', sentiment: 'positive', weight: 10, quotes: ['consistently cited as the leading solution', 'Shop Pay 1-click conversion advantage'] },
-            { theme: 'Total Cost of Ownership', sentiment: 'neutral', weight: 7, quotes: ['caution prospective merchants about high app fees and vendor lock-in'] }
-          ],
-          brandClaims: [
-            { claim: 'Shop Pay provides superior conversion', status: 'verified', rationale: 'Widely cited industry benchmark.' }
-          ],
-          competitorMentions: [
-            { name: 'WooCommerce', context: 'Open-source alternative cited for zero vendor lock-in', sentimentVsBrand: 'neutral' }
-          ],
-          actionableRecommendations: [
-            'Publish transparent TCO (Total Cost of Ownership) comparison calculators to rebut AI mentions of app fee stacking.',
-            'Strengthen AI knowledge graph entity markers around developer flexibility.'
-          ],
-          modelUsed: 'gemini-3.8-flash',
-          provider: 'gemini',
-          latencyMs: 980,
-          tokensUsed: { prompt: 350, completion: 310, total: 660 },
-          analyzedAt: new Date(Date.now() - 3600 * 24 * 1 * 1000).toISOString(),
-          isSimulation: false,
-        }
-      }
-    ];
-    saveReviews(initialReviews);
+    // No sample reviews are stored: every review shown comes from a real analysis run by the user.
+    saveReviews([]);
   }
 }
 
 initializeSeedData();
+
+// Runtime config changes need ADMIN_TOKEN (or local development with no token set).
+function isAdminRequest(req: express.Request): boolean {
+  const token = process.env.ADMIN_TOKEN;
+  return token ? tokensMatch(req.headers['x-admin-token'], token) : IS_DEV;
+}
 
 // Helper: Sleep
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -289,7 +203,7 @@ function generateHeuristicAnalysis(
       neutral: neutralPercent,
       negative: negativePercent,
     },
-    brandVoiceScore: Math.min(95, 65 + (posCount % 20)),
+    brandVoiceScore: null, // not measured by the keyword fallback
     brandVoiceTone: score > 70 ? 'Authoritative, Customer-Centric, Modern' : score > 45 ? 'Informative with Critical Feedback' : 'Distressed Customer Friction',
     brandVoiceTags: [
       brand + ' Core Value',
@@ -297,9 +211,9 @@ function generateHeuristicAnalysis(
       'Market Relevance',
       'AI Retrievable Sentiment'
     ],
-    aiVisibilityScore: Math.min(98, 75 + ((content.length / 50) % 20)),
-    aiCitationProbability: content.length > 200 ? 'High' : 'Medium',
-    hallucinationRisk: 'Low',
+    aiVisibilityScore: null, // not measured by the keyword fallback
+    aiCitationProbability: 'Not assessed',
+    hallucinationRisk: 'Not assessed',
     executiveSummary: `Brand analysis for ${brand} indicates a ${overallSentiment} profile with an aggregate brand sentiment score of ${score}/100. Key discussion drivers emphasize product capability, operational reliability, and competitive comparisons against ${detectedCompetitors.slice(0, 2).join(' and ')}.`,
     strengths: [
       `High recognition for core functionality in ${productOrService || 'key service offerings'}`,
@@ -630,9 +544,8 @@ async function startServer() {
       if (allowed.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
       }
-    } else {
-      res.setHeader('Access-Control-Allow-Origin', '*');
     }
+    // No CORS_ORIGINS set: no cross-origin access (the bundled frontend is served from the same origin).
 
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
@@ -703,16 +616,15 @@ async function startServer() {
       message,
       llm_provider: runtimeConfig.llm_provider,
       has_api_key: Boolean(effectiveKey),
-      masked_api_key: maskKey(effectiveKey),
+      masked_api_key: '', // never return any part of the key
       llm_model: runtimeConfig.llm_model,
       llm_base_url: runtimeConfig.llm_base_url,
       llm_timeout_seconds: runtimeConfig.llm_timeout_seconds,
       llm_max_retries: runtimeConfig.llm_max_retries,
       llm_retry_delay_seconds: runtimeConfig.llm_retry_delay_seconds,
       llm_max_calls_per_hour: runtimeConfig.llm_max_calls_per_hour,
-      brandtrace_db: runtimeConfig.brandtrace_db,
+      brandtrace_db: '',
       storage_mode: runtimeConfig.storage_mode,
-      cors_origins: runtimeConfig.cors_origins,
       calls_this_hour: hourlyCallCount,
       calls_remaining: rate.remaining,
       reset_in_seconds: rate.resetIn,
@@ -1568,6 +1480,10 @@ ${draft}
   // 3. Update Configuration (in-app settings)
   app.post('/api/config', (req, res) => {
     try {
+      if (!isAdminRequest(req)) {
+        res.status(403).json({ success: false, error: 'Runtime configuration changes are disabled. Set environment variables on the server, or set ADMIN_TOKEN and send it in the x-admin-token header.' });
+        return;
+      }
       const {
         llm_provider,
         llm_api_key,
@@ -1584,13 +1500,18 @@ ${draft}
       if (llm_provider !== undefined) runtimeConfig.llm_provider = llm_provider;
       if (llm_api_key !== undefined) runtimeConfig.llm_api_key = llm_api_key;
       if (llm_model !== undefined) runtimeConfig.llm_model = llm_model;
-      if (llm_base_url !== undefined) runtimeConfig.llm_base_url = llm_base_url;
+      if (llm_base_url !== undefined) {
+        if (!isAllowedBaseUrl(llm_base_url)) {
+          res.status(400).json({ success: false, error: 'llm_base_url must be an https URL on an allow-listed host (see ALLOWED_LLM_HOSTS).' });
+          return;
+        }
+        runtimeConfig.llm_base_url = llm_base_url;
+      }
       if (llm_timeout_seconds !== undefined) runtimeConfig.llm_timeout_seconds = Number(llm_timeout_seconds);
       if (llm_max_retries !== undefined) runtimeConfig.llm_max_retries = Number(llm_max_retries);
       if (llm_retry_delay_seconds !== undefined) runtimeConfig.llm_retry_delay_seconds = Number(llm_retry_delay_seconds);
       if (llm_max_calls_per_hour !== undefined) runtimeConfig.llm_max_calls_per_hour = Number(llm_max_calls_per_hour);
-      if (brandtrace_db !== undefined) runtimeConfig.brandtrace_db = brandtrace_db;
-      if (storage_mode !== undefined) runtimeConfig.storage_mode = storage_mode;
+      // brandtrace_db and storage_mode are startup-only settings and are not changeable at runtime.
 
       const rate = checkRateLimit();
       const effectiveKey = runtimeConfig.llm_api_key || (runtimeConfig.llm_provider === 'gemini' ? process.env.GEMINI_API_KEY || '' : '');
@@ -1601,14 +1522,14 @@ ${draft}
         config: {
           llm_provider: runtimeConfig.llm_provider,
           has_api_key: Boolean(effectiveKey),
-          masked_api_key: maskKey(effectiveKey),
+          masked_api_key: '', // never return any part of the key
           llm_model: runtimeConfig.llm_model,
           llm_base_url: runtimeConfig.llm_base_url,
           llm_timeout_seconds: runtimeConfig.llm_timeout_seconds,
           llm_max_retries: runtimeConfig.llm_max_retries,
           llm_retry_delay_seconds: runtimeConfig.llm_retry_delay_seconds,
           llm_max_calls_per_hour: runtimeConfig.llm_max_calls_per_hour,
-          brandtrace_db: runtimeConfig.brandtrace_db,
+          brandtrace_db: '',
           storage_mode: runtimeConfig.storage_mode,
           calls_this_hour: hourlyCallCount,
           calls_remaining: rate.remaining,
@@ -1624,6 +1545,10 @@ ${draft}
   // 4. Test Connection
   app.post('/api/test-connection', async (req, res) => {
     const { provider, apiKey, model, baseUrl } = req.body;
+    if (!isAdminRequest(req) || (baseUrl !== undefined && !isAllowedBaseUrl(baseUrl))) {
+      res.status(403).json({ success: false, error: 'Connection tests need the admin token and an allow-listed https base URL.' });
+      return;
+    }
     const testProvider = provider || runtimeConfig.llm_provider;
     const testKey = apiKey || runtimeConfig.llm_api_key || (testProvider === 'gemini' ? process.env.GEMINI_API_KEY || '' : '');
     const testModel = model || runtimeConfig.llm_model;
@@ -1751,10 +1676,10 @@ ${draft}
         overallSentiment: parsedResult.overallSentiment || 'neutral',
         sentimentScore: Number(parsedResult.sentimentScore ?? 70),
         sentimentBreakdown: parsedResult.sentimentBreakdown || { positive: 60, neutral: 30, negative: 10 },
-        brandVoiceScore: Number(parsedResult.brandVoiceScore ?? 80),
+        brandVoiceScore: (parsedResult.brandVoiceScore == null ? null : Number(parsedResult.brandVoiceScore)),
         brandVoiceTone: parsedResult.brandVoiceTone || 'Modern & Direct',
         brandVoiceTags: parsedResult.brandVoiceTags || [brandName + ' Core'],
-        aiVisibilityScore: Number(parsedResult.aiVisibilityScore ?? 85),
+        aiVisibilityScore: (parsedResult.aiVisibilityScore == null ? null : Number(parsedResult.aiVisibilityScore)),
         aiCitationProbability: parsedResult.aiCitationProbability || 'High',
         hallucinationRisk: parsedResult.hallucinationRisk || 'Low',
         executiveSummary: parsedResult.executiveSummary || 'Brand audit successfully generated.',
@@ -1801,7 +1726,7 @@ ${draft}
       reviews,
       count: reviews.length,
       storage_mode: runtimeConfig.storage_mode,
-      brandtrace_db: runtimeConfig.brandtrace_db,
+      brandtrace_db: '',
     });
   });
 
@@ -1856,10 +1781,7 @@ ${draft}
   });
 
   app.post('/api/reviews/seed', (req, res) => {
-    inMemoryReviews = [];
-    initializeSeedData();
-    const reviews = loadReviews();
-    res.json({ success: true, reviews, count: reviews.length });
+    res.status(410).json({ success: false, error: 'Bundled sample reviews were removed. Run an analysis to create your first review.' });
   });
 
   // ---- VITE / STATIC INTEGRATION ----
