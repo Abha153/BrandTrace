@@ -7,6 +7,8 @@ import { GoogleGenAI } from '@google/genai';
 import { getDatabase, seedDemoWorkspace } from './src/server/db.ts';
 import { runDynamicRules } from './src/server/checker.ts';
 import { isAllowedBaseUrl, tokensMatch } from './src/server/security.ts';
+import { initReviewStore, nextComplianceId, listReviews, getReview, saveReview, deleteReview, reviewStats, recordAudit, listAudit, purgeWorkspaceReviews, expiringSources } from './src/server/reviewStore.ts';
+import { createApiKey, verifyApiKey, revokeApiKey, keyRateAllowed } from './src/server/apiKeys.ts';
 
 dotenv.config();
 
@@ -95,51 +97,6 @@ function getDbStoragePath(): string {
   return path.resolve(__dirname, 'brandtrace-data.json');
 }
 
-let inMemoryReviews: any[] = [];
-
-function loadReviews(): any[] {
-  if (runtimeConfig.storage_mode === 'ephemeral') {
-    return inMemoryReviews;
-  }
-  try {
-    const filePath = getDbStoragePath();
-    if (fs.existsSync(filePath)) {
-      const data = fs.readFileSync(filePath, 'utf8');
-      return JSON.parse(data);
-    }
-  } catch (err) {
-    console.error('Failed reading reviews storage:', err);
-  }
-  return inMemoryReviews;
-}
-
-function saveReviews(reviews: any[]) {
-  inMemoryReviews = reviews;
-  if (runtimeConfig.storage_mode === 'ephemeral') {
-    return;
-  }
-  try {
-    const filePath = getDbStoragePath();
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(filePath, JSON.stringify(reviews, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Failed saving reviews storage:', err);
-  }
-}
-
-// Seed initial default reviews if empty
-function initializeSeedData() {
-  const current = loadReviews();
-  if (current.length === 0) {
-    // No sample reviews are stored: every review shown comes from a real analysis run by the user.
-    saveReviews([]);
-  }
-}
-
-initializeSeedData();
 
 // Runtime config changes need ADMIN_TOKEN (or local development with no token set).
 function isAdminRequest(req: express.Request): boolean {
@@ -562,6 +519,7 @@ async function startServer() {
 
   // Initialize SQLite Database
   const db = getDatabase(runtimeConfig.brandtrace_db);
+  initReviewStore(db);
 
   // Helper: Extract workspace scoping (defaults to 'demo')
   // Note: Client-provided workspace scoping provides demonstration partitioning,
@@ -1140,6 +1098,7 @@ async function startServer() {
       if (ws === 'demo') {
         // Protect shared demo seed records from permanent deletion
         // Reset demo to pristine seed records
+        purgeWorkspaceReviews(db, ws);
         seedDemoWorkspace(db, true);
         res.json({
           success: true,
@@ -1154,6 +1113,7 @@ async function startServer() {
         db.prepare('DELETE FROM rules WHERE workspace_id = ?').run(ws);
         db.prepare('DELETE FROM sources WHERE workspace_id = ?').run(ws);
         db.prepare('DELETE FROM reviews WHERE workspace_id = ?').run(ws);
+        purgeWorkspaceReviews(db, ws); // stored reviews, counters, audit log and API keys
         db.prepare('DELETE FROM workspaces WHERE id = ?').run(ws);
         db.exec('COMMIT');
 
@@ -1214,48 +1174,37 @@ async function startServer() {
   // ---------------------------------------------------------------------------
 
   app.get('/api/stats', (req, res) => {
-    const reviews = loadReviews();
-    const pending = reviews.filter((r) => r.status === 'Pending Review').length;
-    const changes = reviews.filter((r) => r.status === 'Changes Requested').length;
-    const approved = reviews.filter((r) => r.status === 'Approved').length;
-    res.json({
-      total: reviews.length,
-      pending,
-      changes_requested: changes,
-      approved,
-    });
+    res.json(reviewStats(db, getWorkspaceId(req)));
   });
 
   // Review status update
   app.post('/api/reviews/:id/status', (req, res) => {
     const { status, comment } = req.body;
-    const id = req.params.id;
-    const reviews = loadReviews();
-    const item = reviews.find((r) => String(r.id) === String(id));
+    const ws = getWorkspaceId(req);
+    const allowed = ['Pending Review', 'Changes Requested', 'Approved'];
+    if (!allowed.includes(status)) {
+      res.status(400).json({ detail: `status must be one of: ${allowed.join(', ')}` });
+      return;
+    }
+    const item = getReview(db, ws, req.params.id);
     if (!item) {
-      res.status(404).json({ detail: `Review ${id} not found.` });
+      res.status(404).json({ detail: `Review ${req.params.id} not found.` });
       return;
     }
     const prevStatus = item.status || 'Pending Review';
+    const now = new Date().toISOString();
     item.status = status;
-    item.updated_at = new Date().toISOString();
-    if (!item.history) item.history = [];
-    item.history.push({
-      id: item.history.length + 1,
-      previous_status: prevStatus,
-      new_status: status,
-      comment: comment || null,
-      created_at: new Date().toISOString(),
-    });
-    saveReviews(reviews);
+    item.updated_at = now;
+    item.history = [...(item.history || []), { id: (item.history || []).length + 1, previous_status: prevStatus, new_status: status, comment: comment || null, created_at: now }];
+    saveReview(db, ws, 'compliance', item);
+    recordAudit(db, ws, item.id, 'status_changed', { from: prevStatus, to: status, detail: comment || null });
     res.json(item);
   });
 
   // Export review report as markdown
   app.get('/api/reviews/:id/export', (req, res) => {
     const id = req.params.id;
-    const reviews = loadReviews();
-    const item = reviews.find((r) => String(r.id) === String(id));
+    const item = getReview(db, getWorkspaceId(req), id);
     if (!item) {
       res.status(404).send('Review not found');
       return;
@@ -1406,7 +1355,7 @@ ${draft}
       } else if (warnings > 0) {
         statusLabel = 'Pending Review';
       } else {
-        statusLabel = 'Approved';
+        statusLabel = 'Pending Review'; // a human, never the checker, approves
       }
 
       const scoreInfo = {
@@ -1418,6 +1367,16 @@ ${draft}
         basis: errors > 0 ? `${errors} error${errors > 1 ? 's' : ''}` : warnings > 0 ? `${warnings} warning${warnings > 1 ? 's' : ''}` : 'No issues detected',
       };
 
+      const ruleCount = Number((db.prepare('SELECT COUNT(*) AS n FROM rules WHERE workspace_id = ?').get(ws) as any).n);
+      if (findings.length === 0) {
+        scoreInfo.basis = ruleCount === 0
+          ? 'Nothing was checked: this workspace has no rules yet. Add rules in the Brand Kit.'
+          : 'No issues found by the checks that ran. A human reviewer must still approve.';
+      }
+      if (ruleCount === 0) {
+        analysisInfo.notices = [...(analysisInfo.notices || []), 'This workspace has no rules, so the rule checks had nothing to enforce.'];
+      }
+
       const noteText =
         analysisInfo.llm_status === 'completed'
           ? 'Rule checks, keyword retrieval and AI analysis ran. AI findings are validated against stored sources, but a human must make the final decision.'
@@ -1427,9 +1386,9 @@ ${draft}
 
       const engineName = 'deterministic-rules+sqlite-retrieval' + (llmUsed ? `+${activeProvider}(${activeModel})` : '');
 
-      const reviews = loadReviews();
       const existingId = reviewId ? Number(reviewId) : null;
-      let finalId = existingId || reviews.length + 1;
+      const prior = existingId ? getReview(db, ws, existingId) : null;
+      const finalId = prior ? (existingId as number) : nextComplianceId(db, ws);
 
       const reviewDetail = {
         id: finalId,
@@ -1458,18 +1417,9 @@ ${draft}
         updated_at: new Date().toISOString(),
       };
 
-      if (existingId) {
-        const idx = reviews.findIndex((r) => r.id === existingId || String(r.id) === String(existingId));
-        if (idx !== -1) {
-          reviews[idx] = { ...reviews[idx], ...reviewDetail };
-        } else {
-          reviews.unshift(reviewDetail);
-        }
-      } else {
-        reviews.unshift(reviewDetail);
-      }
-
-      saveReviews(reviews);
+      const merged = prior ? { ...prior, ...reviewDetail } : reviewDetail;
+      saveReview(db, ws, 'compliance', merged);
+      recordAudit(db, ws, finalId, prior ? 'review_rerun' : 'review_created', { to: String(reviewDetail.status), detail: `${findings.length} finding(s); engine ${engineName}` });
       res.json(reviewDetail);
     } catch (err: any) {
       console.error('Review error:', err);
@@ -1721,7 +1671,7 @@ ${draft}
 
   // 6. Review Database CRUD
   app.get('/api/reviews', (req, res) => {
-    const reviews = loadReviews();
+    const reviews = listReviews(db, getWorkspaceId(req));
     res.json({
       reviews,
       count: reviews.length,
@@ -1733,7 +1683,7 @@ ${draft}
   app.post('/api/reviews', (req, res) => {
     try {
       const { title, brandName, productOrService, source, content, competitors, tags, analysis } = req.body;
-      const reviews = loadReviews();
+      const ws = getWorkspaceId(req);
 
       const newReview = {
         id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -1748,8 +1698,9 @@ ${draft}
         analysis: analysis || null,
       };
 
-      reviews.unshift(newReview);
-      saveReviews(reviews);
+      saveReview(db, ws, 'intel', newReview);
+      recordAudit(db, ws, newReview.id, 'analysis_saved');
+      const reviews = listReviews(db, ws);
 
       res.json({
         success: true,
@@ -1765,10 +1716,11 @@ ${draft}
   app.delete('/api/reviews/:id', (req, res) => {
     try {
       const id = req.params.id;
-      let reviews = loadReviews();
-      const initialLength = reviews.length;
-      reviews = reviews.filter((r) => r.id !== id);
-      saveReviews(reviews);
+      const ws = getWorkspaceId(req);
+      const deleted = deleteReview(db, ws, id);
+      if (deleted) recordAudit(db, ws, id, 'review_deleted');
+      const reviews = listReviews(db, ws);
+      const initialLength = reviews.length + (deleted ? 1 : 0);
 
       res.json({
         success: true,
@@ -1782,6 +1734,71 @@ ${draft}
 
   app.post('/api/reviews/seed', (req, res) => {
     res.status(410).json({ success: false, error: 'Bundled sample reviews were removed. Run an analysis to create your first review.' });
+  });
+
+
+  // ---------------------------------------------------------------------------
+  // AUDIT TRAIL, SOURCE EXPIRY, API KEYS, PUBLIC CHECK API
+  // ---------------------------------------------------------------------------
+  app.get('/api/audit', (req, res) => {
+    const rid = typeof req.query.review_id === 'string' ? req.query.review_id : undefined;
+    res.json({ entries: listAudit(db, getWorkspaceId(req), rid), note: 'The actor is the workspace; user accounts do not exist yet.' });
+  });
+
+  app.get('/api/sources/expiring', (req, res) => {
+    res.json({ sources: expiringSources(db, getWorkspaceId(req)) });
+  });
+
+  app.put('/api/sources/:id/dates', (req, res) => {
+    const iso = (v: any) => v === null || v === undefined || v === '' ? null : (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) ? v : false);
+    const eff = iso(req.body.effective_from), exp = iso(req.body.expires_on);
+    if (eff === false || exp === false) { res.status(400).json({ error: 'Dates must be YYYY-MM-DD or null.' }); return; }
+    if (eff && exp && exp < eff) { res.status(400).json({ error: 'expires_on cannot be before effective_from.' }); return; }
+    const r = db.prepare('UPDATE sources SET effective_from = ?, expires_on = ? WHERE id = ? AND workspace_id = ?').run(eff, exp, Number(req.params.id), getWorkspaceId(req));
+    if (!Number(r.changes)) { res.status(404).json({ error: 'Source not found.' }); return; }
+    res.json({ success: true, id: Number(req.params.id), effective_from: eff, expires_on: exp });
+  });
+
+  // Admin-only: mint or revoke a workspace API key. The plaintext key is shown once; only its hash is stored.
+  app.post('/api/admin/api-keys', (req, res) => {
+    if (!isAdminRequest(req)) { res.status(403).json({ error: 'Admin token required.' }); return; }
+    const ws = typeof req.body.workspace_id === 'string' ? req.body.workspace_id.trim().slice(0, 64) : '';
+    if (!ws) { res.status(400).json({ error: 'workspace_id is required.' }); return; }
+    const key = createApiKey(db, ws, String(req.body.label || '').slice(0, 80));
+    recordAudit(db, ws, null, 'api_key_created', { actor: 'admin' });
+    res.json({ workspace_id: ws, api_key: key, note: 'Store this key now. It cannot be shown again.' });
+  });
+  app.delete('/api/admin/api-keys/:id', (req, res) => {
+    if (!isAdminRequest(req)) { res.status(403).json({ error: 'Admin token required.' }); return; }
+    const ws = String(req.query.workspace_id || '');
+    const ok = revokeApiKey(db, ws, Number(req.params.id));
+    if (ok) recordAudit(db, ws, null, 'api_key_revoked', { actor: 'admin' });
+    res.status(ok ? 200 : 404).json({ revoked: ok });
+  });
+
+  // Public check API: rules only, no LLM, and the draft is NOT stored.
+  app.post('/api/v1/check', (req, res) => {
+    const auth = verifyApiKey(db, (req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
+    if (!auth) { res.status(401).json({ error: 'Missing or invalid API key. Send Authorization: Bearer <key>.' }); return; }
+    if (!keyRateAllowed(auth.keyId)) { res.status(429).json({ error: 'Rate limit: 60 requests per minute per key.' }); return; }
+    const draft = req.body?.draft;
+    if (typeof draft !== 'string' || !draft.trim() || draft.length > 20000) {
+      res.status(400).json({ error: 'draft must be a non-empty string of at most 20,000 characters.' });
+      return;
+    }
+    const findings = runDynamicRules(db, auth.workspace_id, draft).map((f) => ({
+      category: f.category, severity: f.severity, quote: f.quote, start: f.start, end: f.end, explanation: f.explanation,
+      suggestion: f.suggestion, evidence_status: f.evidence_status,
+      source: f.source ? { id: f.source.id ?? f.source.source_id ?? null, name: f.source.name ?? f.source.source_name ?? null, section: f.source.section ?? f.source.source_section ?? null } : null,
+    }));
+    const ruleCount = Number((db.prepare('SELECT COUNT(*) AS n FROM rules WHERE workspace_id = ?').get(auth.workspace_id) as any).n);
+    recordAudit(db, auth.workspace_id, null, 'api_check', { actor: `api_key:${auth.keyId}`, detail: `${findings.length} finding(s)` });
+    res.json({
+      workspace_id: auth.workspace_id, rules_configured: ruleCount,
+      passed: ruleCount === 0 ? null : findings.length === 0,
+      warnings: ruleCount === 0 ? ['This workspace has no rules, so nothing was checked.'] : [], finding_count: findings.length, findings,
+      source_warnings: expiringSources(db, auth.workspace_id), checks_run: ['deterministic_rules'], llm_used: false, stored: false,
+    });
   });
 
   // ---- VITE / STATIC INTEGRATION ----

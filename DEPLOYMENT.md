@@ -72,3 +72,6 @@ Render provides free Node.js web services with automatic TLS and Git deployment.
 
 Set `LLM_API_KEY` (or `GEMINI_API_KEY`) as a secret in the host dashboard, never in the repo. The model in `render.yaml`
 may be replaced by its provider; confirm the current model id in the provider's documentation and use "Test connection".
+
+To use the check API, create a key with `POST /api/admin/api-keys` (needs `ADMIN_TOKEN`); see [docs/api.md](docs/api.md).
+Back up or attach persistent storage for `BRANDTRACE_DB` if reviews, audit entries and keys must survive restarts.
