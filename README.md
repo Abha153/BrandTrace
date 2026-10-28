@@ -71,9 +71,20 @@ Outputs are recorded in `evaluation/evaluation_report.md`, `evaluation/baseline_
 
 ---
 
+## Company-use features
+- **Workspace-scoped reviews in SQLite**: each workspace sees only its own reviews. "Delete My Data" removes the workspace's reviews, audit log and API keys.
+- **Human approval stays human**: the checker never sets "Approved". No findings gives "Pending Review", and a workspace with no rules says nothing was checked.
+- **Audit trail** (`GET /api/audit`): review created, re-run, status changes with comments, deletions, API checks and key events.
+- **Check API** (`POST /api/v1/check`): per-workspace API keys, rules only, draft not stored. See [docs/api.md](docs/api.md).
+- **Source dates**: effective and expiry dates with warnings for expired or soon-to-expire sources.
+- **CI**: `.github/workflows/ci.yml` runs lint, tests, the checker evaluation and the build (not yet run on GitHub).
+
 ## Known limitations
-- Reviews are stored in a JSON file, not SQLite, and are not scoped per workspace; on Render's free tier they are lost on restart.
-- The workspace id is chosen by the client: it separates demo data but is not authentication.
+- On Render's free tier the SQLite file is ephemeral, so reviews, audit entries and API keys are lost on restart.
+- Reviews from before this version lived in an unscoped JSON file; they are not migrated (they had no workspace owner).
+- There are no user accounts or roles. The workspace id is chosen by the client, so it separates data but is **not authentication**: anyone who guesses an id can read that workspace's reviews. The audit trail records the workspace, not a person.
+- Source expiry dates and the audit trail have API endpoints but **no UI yet**; API keys can only be created by the server admin via the API.
+- Expired sources produce a warning only; their rules are still enforced.
 - Keyword-fallback analysis has no sentiment model; voice and visibility scores are `null` unless an AI provider returns them.
 - Gemini model availability and your API key have not been verified by the maintainer's tests; use "Test connection" after deploying.
 - No automated test covers the HTTP routes or the React UI yet.

@@ -25,3 +25,5 @@ bun.lockb
 /public/crop_test.png
 
 brandtrace-fixes.patch
+
+brandtrace-company-core.patch
