@@ -15,6 +15,12 @@ the problem and cites the approved source. A person, never the checker, makes th
 *Screenshots are captured from the running app with one sample review. Every number on screen is computed from saved
 reviews; nothing is simulated.*
 
+| Brand Kit (fictional demo workspace) | Audit Studio |
+|---|---|
+| ![Brand Kit with rules and approved sources](docs/screenshots/brand-kit.png) | ![Audit Studio with preset test drafts](docs/screenshots/audit-studio.png) |
+
+*Brand Kit and Audit Studio show the fictional demo workspace's rules and the preset test drafts.*
+
 ## What it does
 - **Brand Kit** in SQLite: prohibited names with replacements, tier prices, hype-word limits, required claims, and
   approved reference sources. CSV/JSON import with preview and validation. Source effective/expiry dates with warnings.

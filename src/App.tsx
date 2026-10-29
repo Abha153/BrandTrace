@@ -475,6 +475,7 @@ function BrandTraceMain() {
                 config={config}
                 onRefreshConfig={loadConfig}
                 onOpenSettings={() => setCurrentScreen('settings')}
+                workspaceId={workspaceId}
               />
             )}
 
