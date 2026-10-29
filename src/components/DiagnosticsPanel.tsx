@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Activity,
   Cpu,
@@ -24,14 +24,46 @@ interface DiagnosticsPanelProps {
   config: BrandTraceConfig | null;
   onRefreshConfig: () => void;
   onOpenSettings: () => void;
+  workspaceId?: string;
 }
 
 export const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({
   config,
   onRefreshConfig,
   onOpenSettings,
+  workspaceId = 'demo',
 }) => {
   const { isOriginal } = useTheme();
+
+  // Real status and events: /api/health for the server check, /api/audit for the workspace's recent events.
+  const [serverStatus, setServerStatus] = useState<'checking' | 'ok' | 'down'>('checking');
+  const [auditLogs, setAuditLogs] = useState<{ id: number; text: string; time: string; type: string }[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const h = await fetch('/api/health');
+        if (!cancelled) setServerStatus(h.ok ? 'ok' : 'down');
+      } catch {
+        if (!cancelled) setServerStatus('down');
+      }
+      try {
+        const r = await fetch('/api/audit', { headers: { 'x-workspace-id': workspaceId } });
+        if (!r.ok) throw new Error(String(r.status));
+        const d = await r.json();
+        const rows = (d.entries || []).slice(0, 8).map((e: any) => ({
+          id: e.id,
+          text: [String(e.action || '').replace(/_/g, ' '), e.review_id ? `(review ${e.review_id})` : '', e.detail ? `- ${e.detail}` : ''].filter(Boolean).join(' '),
+          time: e.created_at ? new Date(e.created_at).toLocaleString() : '',
+          type: e.action === 'review_deleted' || e.action === 'api_key_revoked' ? 'info' : 'success',
+        }));
+        if (!cancelled) setAuditLogs(rows);
+      } catch {
+        if (!cancelled) setAuditLogs([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [workspaceId]);
 
   const [copiedCurl, setCopiedCurl] = useState(false);
   const [testingEndpoint, setTestingEndpoint] = useState(false);
@@ -54,7 +86,7 @@ export const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({
       const res = await fetch('/api/stats');
       if (res.ok) {
         const data = await res.json();
-        setEndpointResult(`Success: 200 OK (${data.totalReviews || 0} reviews in DB, uptime healthy)`);
+        setEndpointResult(`Success: 200 OK (${data.total ?? 0} reviews in this workspace)`);
       } else {
         setEndpointResult('Error: API returned ' + res.status);
       }
@@ -65,12 +97,7 @@ export const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({
     }
   };
 
-  const recentLogs = [
-    { id: 1, text: 'AI analysis completed successfully', time: '2m ago', type: 'success' },
-    { id: 2, text: 'Database query executed', time: '5m ago', type: 'info' },
-    { id: 3, text: 'File uploaded', time: '12m ago', type: 'info' },
-    { id: 4, text: 'API connection established', time: '15m ago', type: 'success' },
-  ];
+  const recentLogs = auditLogs ?? [];
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
@@ -102,7 +129,7 @@ export const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({
                 isOriginal ? 'text-white' : 'text-[#15221b]'
               }`}
             >
-              Connected
+              {serverStatus === 'checking' ? 'Checking...' : serverStatus === 'down' ? 'Unreachable' : config?.llm_configured ? 'AI configured' : 'Rules only'}
             </span>
           </div>
           <p
@@ -110,9 +137,9 @@ export const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({
               isOriginal ? 'text-slate-400' : 'text-slate-500'
             }`}
           >
-            {config?.llm_provider === 'none'
-              ? 'Rule Engine (Deterministic)'
-              : `${config?.llm_model || 'gemini-3.8-flash'}`}
+            {config?.llm_configured
+              ? `${config.llm_provider} / ${config.llm_model}`
+              : 'No AI key set: deterministic rules run locally'}
           </p>
         </div>
 
@@ -142,7 +169,7 @@ export const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({
                 isOriginal ? 'text-white' : 'text-[#15221b]'
               }`}
             >
-              Healthy
+              {serverStatus === 'ok' ? 'Reachable' : serverStatus === 'down' ? 'Unreachable' : 'Checking...'}
             </span>
           </div>
           <p
@@ -150,7 +177,7 @@ export const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({
               isOriginal ? 'text-slate-400' : 'text-slate-500'
             }`}
           >
-            {config?.brandtrace_db || 'SQLite (brandtrace.db)'}
+            SQLite (server-side)
           </p>
         </div>
 
@@ -188,7 +215,11 @@ export const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({
               isOriginal ? 'text-slate-400' : 'text-slate-500'
             }`}
           >
-            Persistent SQLite database
+            {config?.storage_mode === 'ephemeral'
+              ? 'Temporary: saved data is lost when the server restarts'
+              : config?.storage_mode === 'persistent'
+              ? 'Persistent storage'
+              : 'Local development storage'}
           </p>
         </div>
       </div>
@@ -215,7 +246,7 @@ export const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({
                 isOriginal ? 'text-slate-400' : 'text-slate-500'
               }`}
             >
-              Real-time audit events, queries, and system dispatches
+              Recent audit events for this workspace
             </p>
           </div>
           <span
@@ -228,6 +259,11 @@ export const DiagnosticsPanel: React.FC<DiagnosticsPanelProps> = ({
         </div>
 
         <div className="space-y-3">
+          {recentLogs.length === 0 && (
+            <p className={`text-xs p-3 ${isOriginal ? 'text-slate-400' : 'text-slate-500'}`}>
+              {auditLogs === null ? 'Loading events...' : 'No events recorded for this workspace yet. Run a review to create one.'}
+            </p>
+          )}
           {recentLogs.map((log) => (
             <div
               key={log.id}

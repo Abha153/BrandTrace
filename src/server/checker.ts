@@ -11,7 +11,7 @@ export interface DeterministicFinding {
   source: any | null;
   sources: any[];
   evidence_status: 'Source-backed' | 'Contradicted' | 'Unverified';
-  detected_by: 'rules';
+  detected_by: 'rules' | 'llm';
 }
 
 /**
