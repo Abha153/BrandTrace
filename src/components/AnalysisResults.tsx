@@ -67,52 +67,19 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   const [selectedModalItem, setSelectedModalItem] = useState<any | null>(null);
 
   // Compute or extract metrics
-  const scoreValue = complianceReview?.score?.value ?? result?.sentimentScore ?? 92;
-  const scoreStatus = complianceReview?.status || (scoreValue >= 80 ? 'Good' : 'Needs Review');
-  const totalMentions = 1248;
-  const positiveCount = 1120;
-  const neutralCount = 98;
-  const negativeCount = 30;
+  const rawScore = complianceReview?.score?.value ?? result?.sentimentScore;
+  const hasScore = typeof rawScore === 'number';
+  const scoreValue: number = hasScore ? rawScore : 0;
+  const scoreStatus = complianceReview?.status || (hasScore ? (scoreValue >= 80 ? 'Good' : 'Needs Review') : 'Not scored');
+  const findingsCount = complianceReview?.findings?.length ?? null;
+  const sentiment = result?.sentimentBreakdown;
+  const positiveCount: number | null = typeof sentiment?.positive === 'number' ? sentiment.positive : null;
+  const neutralCount: number | null = typeof sentiment?.neutral === 'number' ? sentiment.neutral : null;
+  const negativeCount: number | null = typeof sentiment?.negative === 'number' ? sentiment.negative : null;
 
-  // Mockup findings list
-  const displayFindings = [
-    {
-      id: 'policy-violation',
-      title: 'Possible policy violation',
-      subtitle: 'Content may violate our community guidelines.',
-      severity: 'High',
-      count: '2 examples',
-      examples: [
-        'Unverified discount claim detected: "Standard tier now available at $39/month" contradicts official $49 pricing.',
-        'Prohibited terminology: "autonomous execution without oversight" violates guideline rule 4.2.',
-      ],
-      recommendation: 'Update copy to state $49/month and specify human oversight.',
-    },
-    {
-      id: 'inappropriate-content',
-      title: 'Inappropriate content',
-      subtitle: 'Contains sensitive language or risky claims.',
-      severity: 'Medium',
-      count: '5 examples',
-      examples: [
-        'Hype superlatives ("revolutionary", "unrivaled") detected in product description.',
-        'Ambiguous refund guarantee phrasing on landing draft.',
-      ],
-      recommendation: 'Replace sensational adjectives with verifiable benchmark metrics.',
-    },
-    {
-      id: 'brand-mention',
-      title: 'Brand mention (positive)',
-      subtitle: 'Positive sentiment about your brand.',
-      severity: 'Low',
-      count: '12 examples',
-      examples: [
-        'Positive customer reaction regarding verification speed and clarity.',
-        'High compliance confidence across landing hero section.',
-      ],
-      recommendation: 'Leverage customer quotes in case study and social testimonials.',
-    },
-  ];
+  // No placeholder findings: when a review has none, the list is simply empty.
+  type FindingCard = { id: string; title: string; subtitle: string; severity: string; count: string; examples: string[]; recommendation: string };
+  const displayFindings: FindingCard[] = [];
 
   // Map real findings from complianceReview if available
   const activeFindings = complianceReview?.findings && complianceReview.findings.length > 0
@@ -246,7 +213,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   isOriginal ? 'text-white' : 'text-[#15221b]'
                 }`}
               >
-                {scoreValue}%
+                {hasScore ? `${scoreValue}%` : 'n/a'}
               </span>
             </div>
           </div>
@@ -269,9 +236,6 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 {scoreStatus}
               </span>
             </div>
-            <span className="text-[10px] text-emerald-600 block mt-0.5 font-medium">
-              +4% from last audit
-            </span>
           </div>
         </div>
 
@@ -288,18 +252,15 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               isOriginal ? 'text-slate-400' : 'text-slate-500'
             }`}
           >
-            Total Mentions
+            Findings
           </span>
           <div
             className={`text-xl font-bold mt-1 tracking-tight ${
               isOriginal ? 'text-white' : 'text-[#15221b]'
             }`}
           >
-            {totalMentions.toLocaleString()}
+            {findingsCount === null ? '—' : findingsCount.toLocaleString()}
           </div>
-          <span className="text-[10px] text-emerald-600 block mt-0.5 font-medium">
-            +12%
-          </span>
         </div>
 
         {/* Metric 3: Positive */}
@@ -320,7 +281,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           <div
             className={`text-xl font-bold mt-1 tracking-tight text-emerald-600`}
           >
-            {positiveCount.toLocaleString()}
+            {positiveCount === null ? '—' : positiveCount.toLocaleString()}
           </div>
           <span className="text-[10px] text-slate-400 block mt-0.5">89%</span>
         </div>
@@ -343,7 +304,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           <div
             className={`text-xl font-bold mt-1 tracking-tight text-amber-500`}
           >
-            {neutralCount}
+            {neutralCount ?? '—'}
           </div>
           <span className="text-[10px] text-slate-400 block mt-0.5">8%</span>
         </div>
@@ -366,7 +327,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           <div
             className={`text-xl font-bold mt-1 tracking-tight text-red-500`}
           >
-            {negativeCount}
+            {negativeCount ?? '—'}
           </div>
           <span className="text-[10px] text-slate-400 block mt-0.5">3%</span>
         </div>

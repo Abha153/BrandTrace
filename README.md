@@ -1,28 +1,54 @@
-# BrandTrace AI - Brand Compliance & Intelligence Platform
+# BrandTrace AI
 
-BrandTrace AI is a full-stack brand governance and compliance verification platform. It audits marketing copy, press releases, social media drafts, and customer reviews against company brand guidelines, pricing sheets, voice guides, and approved claim registers.
+Checks marketing copy against your brand rules **before it is published**. Every finding quotes the exact text, explains
+the problem and cites the approved source. A person, never the checker, makes the final approval decision.
 
----
+> **Live demo:** https://brandtrace-app.onrender.com (free tier: the first load can take about a minute, and saved data
+> is lost on restart). All brand information in the demo is **fictional sample data**.
 
-## 🌟 Key Features
+| Dashboard (real saved reviews) | Review results |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard-1440.png) | ![Results](docs/screenshots/results-1440.png) |
 
-### 1. Dynamic Brand Kit (SQLite Powered)
-- **Custom Brand Rules**: Configure prohibited product names, approved replacements, tier pricing, tone/hype restrictions, and required claims without code changes.
-- **Approved Reference Sources**: Register company guideline documents, section excerpts, and claim registers as ground-truth evidence.
-- **Instant Propagation**: Modifications in the Brand Kit immediately take effect on all subsequent copy reviews.
-- **CSV & JSON Import**: Atomic imports with live preview, row limits (max 100), required-field validation, and duplicate detection.
-- **1-Click Demo Workspace**: Instant one-click reset to pristine demo sample data.
+<p><img src="docs/screenshots/dashboard-375.png" alt="Dashboard on a 375px phone screen" width="260"></p>
 
-### 2. High-Precision Deterministic Engine (Stage 3 Improvements)
-- **Normalisation**: Handles Unicode typography quotes, Unicode dashes/hyphens (`–`, `—`, `−`), and whitespace collapsing.
-- **Conservative Fuzzy Matching**: Detects single-character typos on long terms (e.g. *BrandTrace Suit* -> *BrandTrace Suite*) and flags them as actionable warnings.
-- **Flexible Currency & Price Parsing**:
-  - USD formats: `$39/month`, `$39 a month`, `39 USD per month`, `$ 39 / mo`
-  - INR formats: `Rs 3,200`, `₹3,200`, `INR 3,200`, `Rs. 3200`
-- **Context-Aware Attribution**: Isolates clauses to prevent false positives when copy mentions third-party plugins or enterprise tiers alongside standard pricing.
+*Screenshots are captured from the running app with one sample review. Every number on screen is computed from saved
+reviews; nothing is simulated.*
 
-### 3. Evaluation (synthetic data, read the caveats)
+## What it does
+- **Brand Kit** in SQLite: prohibited names with replacements, tier prices, hype-word limits, required claims, and
+  approved reference sources. CSV/JSON import with preview and validation. Source effective/expiry dates with warnings.
+- **Rule checks** (`src/server/checker.ts`): normalises quotes and dashes, flags near-miss typos of banned names, parses USD and INR
+  prices, and avoids false alarms on other tiers or third-party prices.
+- **Optional AI analysis** (Gemini, OpenAI-compatible or Anthropic) through server-side keys; the app runs without one and says so.
+- **Human approval flow:** Pending Review, Changes Requested, Approved, with comments and an **audit trail**.
+  A draft with no findings is *Pending Review*, and a workspace with no rules says that nothing was checked.
+- **Check API** (`POST /api/v1/check`): per-workspace API keys, rules only, draft not stored. See [docs/api.md](docs/api.md).
+- **Document upload** (TXT, DOCX, text PDF) to extract text before a review, and **Delete My Data**.
 
+## Honest status
+| Area | Status |
+|---|---|
+| Type-check, 25 tests, production build | Pass (run in CI config; the workflow itself has not run on GitHub yet) |
+| Real-browser check, headless Chromium on Linux | 16 checks pass: review privacy between browsers, real data only, no horizontal overflow at 320/375/768/1440px, no console errors |
+| Rule accuracy | Held-out synthetic set: precision 100%, recall 91.3%. See Evaluation below. **Not** a real-world accuracy figure |
+| AI analysis with a live model | **Not verified.** Use Diagnostics > Test connection after setting your key |
+| Accounts and roles | **Not built.** The workspace id is chosen by the browser and is not authentication |
+
+## Privacy model
+- Reviews in the shared `demo` workspace are stored **per browser** (anonymous client id), so visitors do not see each other's drafts.
+- Other workspaces are separated by id only. Anyone who guesses an id can read that workspace: do not store confidential material until real login exists.
+- With an AI provider configured, the draft and retrieved source text are sent to that provider.
+- Data is stored unencrypted in SQLite.
+
+## Security controls
+- `POST /api/config` and `/api/test-connection` need `ADMIN_TOKEN` (header `x-admin-token`); without it they are disabled in production. API keys are never returned to the browser.
+- API keys are only sent to allow-listed https hosts (extend with `ALLOWED_LLM_HOSTS`).
+- CORS is same-origin unless `CORS_ORIGINS` lists exact origins. Request bodies are limited to 2 MB; uploads to 5 MB.
+- AI calls are capped globally per hour and per day (`LLM_MAX_CALLS_PER_HOUR`, `LLM_MAX_CALLS_PER_DAY`); the counters are shared by all visitors and reset on restart. There is no per-user limit yet.
+- Drafts and API keys are not written to logs.
+
+## Evaluation
 Two evaluations exist, and they measure different things:
 
 - **Real checker, held-out set** (`npm run eval:checker`, report in `evaluation/checker_report.md`): runs the shipped
@@ -35,21 +61,6 @@ Two evaluations exist, and they measure different things:
 
 All data is synthetic, written by one annotator, and covers only the fictional demo-workspace rules. These figures
 do **not** estimate accuracy on real marketing copy, and **no result exists yet for the LLM analysis**.
-
-### 4. Basic Safety & Privacy
-- **Delete My Data**: One-click complete deletion of workspace rules, sources, reviews, and history.
-- **Shared Demo Protection**: Prevents accidental deletion of shared sample seeds in the default demo workspace.
-- **Rate Limiting**: global in-memory hourly cap on AI calls (default 30, set `LLM_MAX_CALLS_PER_HOUR`); it is shared by all visitors and resets on restart. There is no per-user limit yet.
-- **Locked-down configuration**: `POST /api/config` and `/api/test-connection` need `ADMIN_TOKEN` (header `x-admin-token`); with no token they are disabled in production. API keys are never returned, and API keys are only sent to allow-listed https hosts (extend with `ALLOWED_LLM_HOSTS`).
-- **CORS**: same-origin only unless `CORS_ORIGINS` lists exact origins.
-- **Request Size Limiting**: 2MB body limit protecting against payload denial-of-service.
-- **Safe Logging**: Full drafts and upstream API keys are never output to public stdout.
-
-### 5. Document Upload (TXT, DOCX, Text PDF)
-- Drag-and-drop or file selection in Audit Studio.
-- Extracts text safely (< 5MB limit) and previews full text before running compliance review.
-
----
 
 ## 🚀 Quick Start
 
@@ -79,15 +90,18 @@ Outputs are recorded in `evaluation/evaluation_report.md`, `evaluation/baseline_
 - **Source dates**: effective and expiry dates with warnings for expired or soon-to-expire sources.
 - **CI**: `.github/workflows/ci.yml` runs lint, tests, the checker evaluation and the build (not yet run on GitHub).
 
+## Browser check
+`npm run build`, then follow the header of [scripts/browser-check.mjs](scripts/browser-check.mjs) (Linux, headless Chromium).
+
 ## Known limitations
 - On Render's free tier the SQLite file is ephemeral, so reviews, audit entries and API keys are lost on restart.
 - Reviews from before this version lived in an unscoped JSON file; they are not migrated (they had no workspace owner).
 - There are no user accounts or roles. The workspace id is chosen by the client, so it separates data but is **not authentication**: anyone who guesses an id can read that workspace's reviews. The audit trail records the workspace, not a person.
-- Source expiry dates and the audit trail have API endpoints but **no UI yet**; API keys can only be created by the server admin via the API.
+- The audit trail and API-key management have API endpoints but **no screen yet**; source expiry is surfaced on the dashboard only. API keys can only be created by the server admin via the API.
 - Expired sources produce a warning only; their rules are still enforced.
 - Keyword-fallback analysis has no sentiment model; voice and visibility scores are `null` unless an AI provider returns them.
 - Gemini model availability and your API key have not been verified by the maintainer's tests; use "Test connection" after deploying.
-- No automated test covers the HTTP routes or the React UI yet.
+- No automated test covers the HTTP routes, and the real-browser check (`scripts/browser-check.mjs`) is run by hand, not in CI.
 
 ## ☁️ Deployment
 

@@ -1,4 +1,4 @@
-﻿# Render Blueprint for BrandTrace
+# Render Blueprint for BrandTrace
 # Free tier web service running full-stack React + Express + SQLite
 # Note: On Render free tier, the filesystem is ephemeral, so the SQLite database is reset
 # whenever the container restarts or spins down after inactivity.

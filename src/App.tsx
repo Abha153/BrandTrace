@@ -137,7 +137,7 @@ function BrandTraceMain() {
 
       setCurrentComplianceReview(data);
       setCurrentScreen('results');
-      showToast('success', `Compliance check completed (Score: ${data.score?.value || 92}/100)`);
+      showToast('success', `Compliance check completed${typeof data.score?.value === 'number' ? ` (Score: ${data.score.value}/100)` : ''}`);
       loadConfig();
       loadReviews();
     } catch (err: any) {
@@ -179,7 +179,7 @@ function BrandTraceMain() {
       if (data.warning) {
         showToast('info', data.warning);
       } else {
-        showToast('success', `Brand audit completed (Score: ${data.result.sentimentScore || 90}/100)`);
+        showToast('success', `Brand audit completed${typeof data.result?.sentimentScore === 'number' ? ` (Score: ${data.result.sentimentScore}/100)` : ''}`);
       }
       loadConfig();
       loadReviews();
@@ -221,7 +221,7 @@ function BrandTraceMain() {
           source: 'customer_review',
           content: 'Brand perception audit report',
           analysis: currentResult,
-          status: (currentResult.sentimentScore ?? 75) >= 75 ? 'Approved' : 'Changes Requested',
+          status: 'Pending Review', // a person approves, never the score
         };
       } else {
         return;
@@ -410,6 +410,7 @@ function BrandTraceMain() {
           mobileOpen={mobileSidebarOpen}
           onCloseMobile={() => setMobileSidebarOpen(false)}
           savedCount={reviews.length}
+          averageScore={(() => { const v = reviews.map((r) => r.score?.value).filter((x): x is number => typeof x === 'number'); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; })()}
         />
 
         {/* Right Content Area */}
@@ -424,6 +425,7 @@ function BrandTraceMain() {
           <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
             {currentScreen === 'dashboard' && (
               <DashboardView
+                reviews={reviews}
                 onNavigate={setCurrentScreen}
                 onQuickAudit={() => setCurrentScreen('studio')}
               />
@@ -464,8 +466,7 @@ function BrandTraceMain() {
                 reviews={reviews}
                 onSelectReview={handleSelectReview}
                 onDeleteReview={handleDeleteReview}
-                onSeedSampleReviews={handleSeedSamples}
-                storageMode={config?.storage_mode || 'local'}
+                                storageMode={config?.storage_mode || 'local'}
               />
             )}
 

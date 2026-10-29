@@ -16,29 +16,31 @@ export const ThemeToggle: React.FC<{ className?: string }> = ({ className = '' }
       <button
         type="button"
         onClick={() => setTheme('light')}
-        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
+        className={`flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
           !isOriginal
             ? 'bg-white text-[#2d5a43] shadow-xs'
             : 'text-slate-400 hover:text-slate-200'
         }`}
         title="Switch to Light Theme (Warm white & forest green)"
+        aria-label="Light theme"
       >
         <Sun className="w-3.5 h-3.5 text-amber-500" />
-        <span className="text-[11px]">Light</span>
+        <span className="hidden sm:inline text-[11px]">Light</span>
       </button>
 
       <button
         type="button"
         onClick={() => setTheme('original')}
-        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
+        className={`flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${
           isOriginal
             ? 'bg-slate-800 text-cyan-300 shadow-xs'
             : 'text-slate-500 hover:text-slate-800'
         }`}
         title="Switch to Original Theme (Blue-black & cyan)"
+        aria-label="Original (dark) theme"
       >
         <Moon className="w-3.5 h-3.5 text-indigo-400" />
-        <span className="text-[11px]">Original</span>
+        <span className="hidden sm:inline text-[11px]">Original</span>
       </button>
     </div>
   );

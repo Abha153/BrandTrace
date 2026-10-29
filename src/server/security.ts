@@ -25,3 +25,13 @@ export function tokensMatch(sent: unknown, expected: string | undefined): boolea
   const b = crypto.createHash('sha256').update(expected).digest();
   return crypto.timingSafeEqual(a, b);
 }
+
+/**
+ * Scope under which reviews are stored. The shared "demo" workspace would otherwise show every visitor's drafts to
+ * every other visitor, so demo reviews are kept per browser (anonymous client id). Other workspaces use their own id.
+ */
+export function reviewScope(workspaceId: string, clientId: unknown): string {
+  if (workspaceId !== 'demo') return workspaceId;
+  const id = typeof clientId === 'string' && /^[A-Za-z0-9_-]{8,64}$/.test(clientId) ? clientId : 'anonymous';
+  return `demo:${id}`;
+}
