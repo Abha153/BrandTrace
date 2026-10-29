@@ -19,8 +19,8 @@ export const TopBar: React.FC<TopBarProps> = ({
     switch (currentScreen) {
       case 'dashboard':
         return {
-          title: 'Good morning, Yash',
-          subtitle: "Here's what's happening with your brand today.",
+          title: 'Dashboard',
+          subtitle: 'A summary of the reviews saved in this workspace.',
         };
       case 'studio':
         return {
@@ -108,28 +108,6 @@ export const TopBar: React.FC<TopBarProps> = ({
           {/* Theme Toggle matching mockup */}
           <ThemeToggle />
 
-          {/* User Profile Avatar with Yash · Pro Plan */}
-          <div
-            className={`flex items-center gap-2 pl-2 border-l ${
-              isOriginal ? 'border-slate-800' : 'border-[#e7e4dc]'
-            }`}
-          >
-            <div className="w-8 h-8 rounded-full bg-[#2d5a43] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-              Y
-            </div>
-            <div className="hidden sm:block text-left text-xs leading-tight">
-              <span
-                className={`font-semibold block ${
-                  isOriginal ? 'text-white' : 'text-[#15221b]'
-                }`}
-              >
-                Yash
-              </span>
-              <span className="text-[10px] text-emerald-600 dark:text-cyan-400 font-medium">
-                Pro Plan
-              </span>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
 import { getDatabase, seedDemoWorkspace } from './src/server/db.ts';
 import { runDynamicRules } from './src/server/checker.ts';
-import { isAllowedBaseUrl, tokensMatch } from './src/server/security.ts';
+import { isAllowedBaseUrl, tokensMatch, reviewScope } from './src/server/security.ts';
 import { friendlyLlmError, DailyCounter } from './src/server/llmErrors.ts';
 import { initReviewStore, nextComplianceId, listReviews, getReview, saveReview, deleteReview, reviewStats, recordAudit, listAudit, purgeWorkspaceReviews, expiringSources } from './src/server/reviewStore.ts';
 import { createApiKey, verifyApiKey, revokeApiKey, keyRateAllowed } from './src/server/apiKeys.ts';
@@ -519,7 +519,7 @@ async function startServer() {
     // No CORS_ORIGINS set: no cross-origin access (the bundled frontend is served from the same origin).
 
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key, x-workspace-id, x-client-id, x-admin-token');
 
     if (req.method === 'OPTIONS') {
       res.sendStatus(200);
@@ -538,6 +538,8 @@ async function startServer() {
   // Helper: Extract workspace scoping (defaults to 'demo')
   // Note: Client-provided workspace scoping provides demonstration partitioning,
   // not cryptographic multi-tenant access control.
+  const scopeOf = (req: express.Request): string => reviewScope(getWorkspaceId(req), req.headers['x-client-id']);
+
   function getWorkspaceId(req: express.Request): string {
     const headerWs = req.headers['x-workspace-id'];
     if (typeof headerWs === 'string' && headerWs.trim()) {
@@ -1112,7 +1114,7 @@ async function startServer() {
       if (ws === 'demo') {
         // Protect shared demo seed records from permanent deletion
         // Reset demo to pristine seed records
-        purgeWorkspaceReviews(db, ws);
+        purgeWorkspaceReviews(db, scopeOf(req)); // only this browser's demo reviews, never other visitors'
         seedDemoWorkspace(db, true);
         res.json({
           success: true,
@@ -1188,19 +1190,19 @@ async function startServer() {
   // ---------------------------------------------------------------------------
 
   app.get('/api/stats', (req, res) => {
-    res.json(reviewStats(db, getWorkspaceId(req)));
+    res.json(reviewStats(db, scopeOf(req)));
   });
 
   // Review status update
   app.post('/api/reviews/:id/status', (req, res) => {
     const { status, comment } = req.body;
-    const ws = getWorkspaceId(req);
+    const scope = scopeOf(req);
     const allowed = ['Pending Review', 'Changes Requested', 'Approved'];
     if (!allowed.includes(status)) {
       res.status(400).json({ detail: `status must be one of: ${allowed.join(', ')}` });
       return;
     }
-    const item = getReview(db, ws, req.params.id);
+    const item = getReview(db, scope, req.params.id);
     if (!item) {
       res.status(404).json({ detail: `Review ${req.params.id} not found.` });
       return;
@@ -1210,15 +1212,15 @@ async function startServer() {
     item.status = status;
     item.updated_at = now;
     item.history = [...(item.history || []), { id: (item.history || []).length + 1, previous_status: prevStatus, new_status: status, comment: comment || null, created_at: now }];
-    saveReview(db, ws, 'compliance', item);
-    recordAudit(db, ws, item.id, 'status_changed', { from: prevStatus, to: status, detail: comment || null });
+    saveReview(db, scope, 'compliance', item);
+    recordAudit(db, scope, item.id, 'status_changed', { from: prevStatus, to: status, detail: comment || null });
     res.json(item);
   });
 
   // Export review report as markdown
   app.get('/api/reviews/:id/export', (req, res) => {
     const id = req.params.id;
-    const item = getReview(db, getWorkspaceId(req), id);
+    const item = getReview(db, scopeOf(req), id);
     if (!item) {
       res.status(404).send('Review not found');
       return;
@@ -1410,8 +1412,9 @@ ${draft}
       const engineName = 'deterministic-rules+sqlite-retrieval' + (llmUsed ? `+${activeProvider}(${activeModel})` : '');
 
       const existingId = reviewId ? Number(reviewId) : null;
-      const prior = existingId ? getReview(db, ws, existingId) : null;
-      const finalId = prior ? (existingId as number) : nextComplianceId(db, ws);
+      const scope = scopeOf(req);
+      const prior = existingId ? getReview(db, scope, existingId) : null;
+      const finalId = prior ? (existingId as number) : nextComplianceId(db, scope);
 
       const reviewDetail = {
         id: finalId,
@@ -1441,8 +1444,8 @@ ${draft}
       };
 
       const merged = prior ? { ...prior, ...reviewDetail } : reviewDetail;
-      saveReview(db, ws, 'compliance', merged);
-      recordAudit(db, ws, finalId, prior ? 'review_rerun' : 'review_created', { to: String(reviewDetail.status), detail: `${findings.length} finding(s); engine ${engineName}` });
+      saveReview(db, scope, 'compliance', merged);
+      recordAudit(db, scope, finalId, prior ? 'review_rerun' : 'review_created', { to: String(reviewDetail.status), detail: `${findings.length} finding(s); engine ${engineName}` });
       res.json(reviewDetail);
     } catch (err: any) {
       console.error('Review error:', err);
@@ -1694,7 +1697,7 @@ ${draft}
 
   // 6. Review Database CRUD
   app.get('/api/reviews', (req, res) => {
-    const reviews = listReviews(db, getWorkspaceId(req));
+    const reviews = listReviews(db, scopeOf(req));
     res.json({
       reviews,
       count: reviews.length,
@@ -1706,7 +1709,7 @@ ${draft}
   app.post('/api/reviews', (req, res) => {
     try {
       const { title, brandName, productOrService, source, content, competitors, tags, analysis } = req.body;
-      const ws = getWorkspaceId(req);
+      const ws = scopeOf(req);
 
       const newReview = {
         id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -1739,7 +1742,7 @@ ${draft}
   app.delete('/api/reviews/:id', (req, res) => {
     try {
       const id = req.params.id;
-      const ws = getWorkspaceId(req);
+      const ws = scopeOf(req);
       const deleted = deleteReview(db, ws, id);
       if (deleted) recordAudit(db, ws, id, 'review_deleted');
       const reviews = listReviews(db, ws);
@@ -1765,7 +1768,7 @@ ${draft}
   // ---------------------------------------------------------------------------
   app.get('/api/audit', (req, res) => {
     const rid = typeof req.query.review_id === 'string' ? req.query.review_id : undefined;
-    res.json({ entries: listAudit(db, getWorkspaceId(req), rid), note: 'The actor is the workspace; user accounts do not exist yet.' });
+    res.json({ entries: listAudit(db, scopeOf(req), rid), note: 'The actor is the workspace; user accounts do not exist yet.' });
   });
 
   app.get('/api/sources/expiring', (req, res) => {

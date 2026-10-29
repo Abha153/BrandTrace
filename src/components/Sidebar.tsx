@@ -32,6 +32,7 @@ interface SidebarProps {
   mobileOpen: boolean;
   onCloseMobile: () => void;
   savedCount: number;
+  averageScore?: number | null;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -40,6 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   mobileOpen,
   onCloseMobile,
   savedCount,
+  averageScore = null,
 }) => {
   const { isOriginal } = useTheme();
 
@@ -176,13 +178,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className={isOriginal ? 'stroke-cyan-400' : 'stroke-[#2d5a43]'}
                   strokeWidth="3.5"
                   strokeDasharray="88"
-                  strokeDashoffset="7" // ~92%
+                  strokeDashoffset={88 * (1 - (averageScore ?? 0) / 100)}
                   strokeLinecap="round"
                   fill="none"
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center font-bold text-[11px]">
-                92%
+                {averageScore === null ? '—' : `${averageScore}%`}
               </div>
             </div>
 
@@ -192,12 +194,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   isOriginal ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
-                Compliance Score
+                Average score
               </span>
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                <TrendingUp className="w-3 h-3" />
-                <span>+4% from last week</span>
-              </div>
+              <div className="text-[11px] text-slate-500">{averageScore === null ? 'No reviews yet' : 'Across saved reviews'}</div>
             </div>
           </div>
         </div>

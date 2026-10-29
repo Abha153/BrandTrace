@@ -236,7 +236,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                       </span>
                       <span className="text-xs font-bold text-emerald-600 dark:text-cyan-400 flex items-center gap-1">
                         <TrendingUp className="w-3 h-3" />
-                        +4% from last week
+                        Illustrative example
                       </span>
                     </div>
                   </div>
@@ -257,7 +257,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 {/* Bottom of Card: Recent Findings List (matches mockup) */}
                 <div className="pt-4 space-y-2.5">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
-                    Recent Findings
+                    Example findings (illustration, not live data)
                   </span>
 
                   {/* Finding 1: High */}

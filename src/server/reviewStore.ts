@@ -50,7 +50,7 @@ export function saveReview(db: DatabaseSync, ws: string, kind: ReviewKind, revie
   db.prepare(
     `INSERT INTO stored_reviews (rid, workspace_id, kind, status, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(workspace_id, rid) DO UPDATE SET status = excluded.status, body = excluded.body, updated_at = excluded.updated_at`
-  ).run(String(review.id), ws, kind, review.status ?? null, JSON.stringify({ ...review, workspace_id: ws }), review.created_at || review.createdAt || now, now);
+  ).run(String(review.id), ws, kind, review.status ?? null, JSON.stringify({ workspace_id: ws, ...review }), review.created_at || review.createdAt || now, now);
 }
 
 export function deleteReview(db: DatabaseSync, ws: string, id: string | number): boolean {
